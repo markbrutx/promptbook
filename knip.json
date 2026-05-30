@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["test-support/**/*.ts"],
+      "project": "test-support/**/*.ts"
+    },
+    "packages/core": {
+      "entry": ["src/index.ts", "test/**/*.test.ts"],
+      "project": "src/**/*.ts"
+    },
+    "packages/cli": {
+      "entry": ["src/index.ts", "bin/promptbook.ts", "test/**/*.test.ts"],
+      "project": "src/**/*.ts"
+    },
+    "packages/openrouter": {
+      "entry": ["src/index.ts", "test/**/*.test.ts"],
+      "project": "src/**/*.ts"
+    }
+  }
+}

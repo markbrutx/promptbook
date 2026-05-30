@@ -1,0 +1,7 @@
+{
+  "name": "greeting",
+  "prompt": "assistant",
+  "context": { "subjectName": "Ada", "notesDigest": "thin metrics" },
+  "input": "{\"text\": \"hello world\"}",
+  "assert": [{ "type": "contains", "value": "hello" }, { "type": "json-valid" }]
+}

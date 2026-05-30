@@ -1,0 +1,7 @@
+{
+  "name": "missing",
+  "prompt": "assistant",
+  "context": { "subjectName": "Ada", "notesDigest": "thin metrics" },
+  "input": "plain text output, no marker here",
+  "assert": [{ "type": "contains", "value": "absent-token" }]
+}

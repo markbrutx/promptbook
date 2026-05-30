@@ -1,0 +1,8 @@
+{
+  "name": "flaky",
+  "prompt": "assistant",
+  "context": { "subjectName": "Ada", "notesDigest": "thin metrics" },
+  "input": "ok",
+  "samples": 4,
+  "assert": [{ "type": "contains", "value": "ok" }]
+}

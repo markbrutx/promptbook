@@ -1,0 +1,10 @@
+name: clean
+base:
+  - lang
+  - intro
+  - ex-pos-1
+  - ex-neg-1
+  - ex-pos-2
+  - ex-neg-2
+  - footer
+rules: []

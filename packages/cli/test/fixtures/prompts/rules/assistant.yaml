@@ -1,0 +1,29 @@
+name: assistant
+base:
+  - voice
+  - task-framing
+  - locale
+  - native-language
+  - bans
+  - input-context
+  - json-return
+rules:
+  # Terse variant: swap voice, task framing and the input block.
+  - when:
+      mode: terse
+    replace:
+      voice: terse-voice
+      task-framing: terse-task-framing
+      input-context: terse-input-context
+  # ...and add the line-by-line structuring constraint right after the bans.
+  - when:
+      mode: terse
+    add:
+      - line-by-content
+    after: bans
+  # Industry axis: only "tech" has a rule, so industry=zoo stays unmatched.
+  - when:
+      industry: tech
+    add:
+      - tech-note
+    after: bans

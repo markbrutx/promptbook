@@ -1,0 +1,16 @@
+name: dirty
+base:
+  - intro
+  - ex-good-1
+  - ex-good-2
+  - lang
+  - ex-good-3
+  - ex-bad-1
+  - tail
+  - footer
+rules:
+  # Adds a fragment id that does not exist -> dangling-reference (error).
+  - when: {}
+    add:
+      - ghost
+    after: tail

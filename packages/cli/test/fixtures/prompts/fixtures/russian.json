@@ -1,0 +1,7 @@
+{
+  "name": "russian",
+  "prompt": "assistant",
+  "context": { "subjectName": "Ada", "notesDigest": "слабые метрики" },
+  "input": "Ответ написан полностью на русском языке без латиницы",
+  "assert": [{ "type": "language", "lang": "ru" }]
+}

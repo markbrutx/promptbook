@@ -1,0 +1,25 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+coverage/
+
+# secrets & local env (never commit keys, e.g. OPENROUTER_API_KEY)
+.env
+.env.*
+*.local
+
+# logs & caches
+*.log
+.cache/
+
+# sandbox for testing against real downstream projects — never committed
+tmp/
+
+# internal, local-only docs
+CLAUDE.md
+VISION.md
+ROADMAP.md
+goals/
+codemaps/
+.reports/

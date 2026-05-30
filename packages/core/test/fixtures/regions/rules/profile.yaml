@@ -1,0 +1,14 @@
+name: profile
+base:
+  - base-intro
+rules:
+  - when:
+      industry: tech
+    add:
+      - tech-note
+    after: base-intro
+  - when:
+      industry: finance
+    add:
+      - finance-note
+    after: base-intro

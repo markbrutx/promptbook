@@ -1,0 +1,7 @@
+{
+  "name": "default-samples",
+  "prompt": "assistant",
+  "context": { "subjectName": "Ada", "notesDigest": "thin metrics" },
+  "input": "ok",
+  "assert": [{ "type": "contains", "value": "ok" }]
+}

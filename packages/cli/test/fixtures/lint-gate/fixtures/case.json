@@ -1,0 +1,6 @@
+{
+  "name": "case",
+  "prompt": "broken",
+  "input": "hi",
+  "assert": [{ "type": "contains", "value": "x" }]
+}
