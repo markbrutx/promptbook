@@ -32,6 +32,10 @@ export interface ParsedArgs {
   threshold?: number;
   /** eval: run lint on each resolved variant before sampling. */
   lint: boolean;
+  /** view: port for the viewer server (0/undefined picks a free port). */
+  port?: number;
+  /** view: do not open the browser after the server starts. */
+  noOpen: boolean;
 }
 
 /** Constraints for a numeric flag, used by {@link parseNumberFlag}. */
@@ -90,6 +94,8 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
       samples: { type: "string" },
       threshold: { type: "string" },
       lint: { type: "boolean" },
+      port: { type: "string" },
+      "no-open": { type: "boolean" },
     },
   });
   const maxTokens = parseNumberFlag(values["max-tokens"], "max-tokens", {
@@ -106,6 +112,12 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     min: 0,
     max: 1,
     expected: "a number between 0 and 1",
+  });
+  const port = parseNumberFlag(values.port, "port", {
+    integer: true,
+    min: 0,
+    max: 65535,
+    expected: "a port between 0 and 65535",
   });
   return {
     command: positionals[0],
@@ -127,5 +139,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     samples,
     threshold,
     lint: values.lint ?? false,
+    port,
+    noOpen: values["no-open"] ?? false,
   };
 }

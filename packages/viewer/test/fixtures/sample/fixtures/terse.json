@@ -1,0 +1,7 @@
+{
+  "name": "terse",
+  "prompt": "assistant",
+  "context": { "mode": "terse", "subjectName": "Ada", "notesDigest": "thin metrics" },
+  "input": "ok",
+  "assert": [{ "type": "contains", "value": "ok" }]
+}

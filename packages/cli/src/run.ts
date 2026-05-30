@@ -6,6 +6,7 @@ import { cmdEval } from "./commands/eval.js";
 import { cmdLint } from "./commands/lint.js";
 import { cmdLs } from "./commands/ls.js";
 import { cmdResolve } from "./commands/resolve.js";
+import { cmdView } from "./commands/view.js";
 import { defaultIO, type IO } from "./io.js";
 
 const HELP = `promptbook — compose prompts from reusable fragments
@@ -18,6 +19,7 @@ Commands:
   lint [<prompt>]         Run static checks; with no prompt, book rules only
   eval [<name|glob>]      Run fixtures through a model adapter, report pass-rate
   bundle [<dir>]          Compile a prompts folder into an importable book module
+  view                    Start the local web viewer over the prompts folder
   ls                      List compositions and fragments
 
 Options:
@@ -34,6 +36,8 @@ Options:
   --lint                  eval: run a static lint gate over every variant first
   -o, --out <file>        bundle: write the generated module to a file (default: stdout)
   --plain                 bundle: emit a plain module (no type-only import; e.g. for Deno)
+  --port N                view: port for the viewer server (default: a free port)
+  --no-open               view: do not open the browser after starting
   --fragments             ls: list fragments only
   --compositions          ls: list compositions only
   -h, --help              Show this help
@@ -88,6 +92,8 @@ export async function run(argv: string[], io: IO = defaultIO()): Promise<number>
       return cmdEval(args, io);
     case "bundle":
       return cmdBundle(args, io);
+    case "view":
+      return cmdView(args, io);
     case "ls":
       return cmdLs(args, io);
     default:

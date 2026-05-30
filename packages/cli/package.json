@@ -31,6 +31,9 @@
     "@promptbook/core": "*",
     "@promptbook/openrouter": "*"
   },
+  "optionalDependencies": {
+    "@promptbook/viewer": "*"
+  },
   "devDependencies": {
     "@biomejs/biome": "latest",
     "@types/node": "^20.14.0",

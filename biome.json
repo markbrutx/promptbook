@@ -19,5 +19,17 @@
   },
   "files": {
     "includes": ["**", "!**/dist", "!**/node_modules"]
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["packages/viewer/src/web/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noArrayIndexKey": "off"
+          }
+        }
+      }
+    }
+  ]
 }

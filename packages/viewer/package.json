@@ -1,0 +1,44 @@
+{
+  "name": "@promptbook/viewer",
+  "version": "0.0.0",
+  "description": "Storybook-for-prompts: a local web app that renders a prompts folder via @promptbook/core.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsgo -p tsconfig.build.json && vite build",
+    "typecheck": "tsgo --noEmit -p tsconfig.json && tsgo --noEmit -p tsconfig.web.json",
+    "test": "vitest --run",
+    "check": "biome check ."
+  },
+  "dependencies": {
+    "@promptbook/core": "*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "latest",
+    "@types/node": "^20.14.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@typescript/native-preview": "latest",
+    "@vitejs/plugin-react": "^4.7.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "^5.6.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20.6"
+  }
+}

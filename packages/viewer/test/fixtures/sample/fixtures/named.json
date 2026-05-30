@@ -1,0 +1,7 @@
+{
+  "name": "named",
+  "prompt": "assistant",
+  "context": { "subjectName": "Grace", "notesDigest": "strong record" },
+  "input": "ok",
+  "assert": [{ "type": "contains", "value": "ok" }]
+}

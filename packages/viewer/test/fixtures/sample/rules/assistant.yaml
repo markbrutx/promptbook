@@ -1,0 +1,24 @@
+name: assistant
+base:
+  - voice
+  - task-framing
+  - locale
+  - native-language
+  - bans
+  - input-context
+  - json-return
+rules:
+  # When assembling the terse variant, swap the voice, the task framing and the
+  # input block for their terse-specific fragments.
+  - when:
+      mode: terse
+    replace:
+      voice: terse-voice
+      task-framing: terse-task-framing
+      input-context: terse-input-context
+  # ...and add the line-by-line structuring constraint right after the bans.
+  - when:
+      mode: terse
+    add:
+      - line-by-content
+    after: bans

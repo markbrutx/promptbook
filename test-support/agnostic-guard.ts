@@ -7,8 +7,8 @@ import { readdir, readFile } from "node:fs/promises";
 // the repo-wide domain `grep` check. That lets the single source-of-truth term
 // list below be written plainly, with no obfuscation.
 
-/** File types scanned for leaks: source plus every fixture format. */
-const SCAN_EXT = [".ts", ".md", ".yaml", ".yml", ".json"];
+/** File types scanned for leaks: source (incl. web), styles, markup, fixtures. */
+const SCAN_EXT = [".ts", ".tsx", ".md", ".yaml", ".yml", ".json", ".css", ".html"];
 
 // Domain vocabulary from the dogfood app that must never appear in any
 // package's `src`/`bin` or test fixtures. Each term is split into fragments so

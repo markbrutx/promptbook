@@ -16,10 +16,12 @@ describe("agnosticism guard", () => {
     const pkg = JSON.parse(await readFile(pkgPath, "utf8")) as {
       dependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
+      optionalDependencies?: Record<string, string>;
     };
     const runtimeDeps = {
       ...(pkg.dependencies ?? {}),
       ...(pkg.peerDependencies ?? {}),
+      ...(pkg.optionalDependencies ?? {}),
     };
     for (const dep of Object.keys(runtimeDeps)) {
       expect(CLI_UI_DEPS).not.toContain(dep);
@@ -29,5 +31,7 @@ describe("agnosticism guard", () => {
       "@promptbook/core",
       "@promptbook/openrouter",
     ]);
+    // The viewer is an optional dependency (lazily imported by `view`).
+    expect(Object.keys(pkg.optionalDependencies ?? {})).toEqual(["@promptbook/viewer"]);
   });
 });

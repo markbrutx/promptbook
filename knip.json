@@ -16,6 +16,11 @@
     "packages/openrouter": {
       "entry": ["src/index.ts", "test/**/*.test.ts"],
       "project": "src/**/*.ts"
+    },
+    "packages/viewer": {
+      "entry": ["src/index.ts", "test/**/*.test.ts"],
+      "project": ["src/**/*.ts", "src/**/*.tsx"],
+      "ignore": ["src/web/env.d.ts"]
     }
   }
 }

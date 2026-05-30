@@ -21,6 +21,8 @@ export { parseFrontmatter } from "./frontmatter.js";
 export { nodeFs } from "./fs.js";
 export { interpolate } from "./interpolate.js";
 export { lint } from "./lint/lint.js";
+export type { FragmentReference } from "./lint/references.js";
+export { iterateReferences } from "./lint/references.js";
 export type {
   BannedTokensOptions,
   DanglingReferenceOptions,
