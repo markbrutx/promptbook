@@ -89,7 +89,7 @@ export interface CodePromptSample {
  * book index every prompt of a domain, computed ones included, as one menu.
  */
 export interface CodePrompt {
-  /** Lookup name, e.g. "quiz-pack". */
+  /** Lookup name, e.g. "digest-table". */
   name: string;
   /** Optional human description. */
   description?: string;
