@@ -29,6 +29,19 @@ describe("buildBookResponse", () => {
     expect(voice?.sourceFile).toBe("fragments/voice.md");
     expect(voice?.kind).toBe("persona");
   });
+
+  it("lists code-prompts with samples and a relativized manifest path", async () => {
+    const book = buildBookResponse(await folder(), sampleDir);
+
+    const digest = book.codePrompts.find((c) => c.name === "digest-table");
+    expect(digest).toBeDefined();
+    expect(digest?.description).toContain("variable-length table");
+    expect(digest?.sourceFile).toBe("code-prompts/digest-table.yaml");
+    expect(digest?.samples.map((s) => s.label)).toEqual(["empty", "filled"]);
+    // The captured output ships to the canvas verbatim.
+    expect(digest?.samples[1]?.output).toContain("Summary table (3 rows):");
+    expect(digest?.samples[0]?.context).toEqual({ rows: 0 });
+  });
 });
 
 describe("buildResolveResponse", () => {

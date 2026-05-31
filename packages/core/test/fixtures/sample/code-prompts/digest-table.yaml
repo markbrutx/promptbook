@@ -1,0 +1,10 @@
+name: digest-table
+description: Builds a variable-length table from runtime rows (count and order are computed).
+samples:
+  - label: empty
+    context: { rows: 0 }
+    output: |
+      No rows to summarize yet.
+  - label: filled
+    context: { rows: 3 }
+    file: digest-table.filled.txt

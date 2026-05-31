@@ -53,9 +53,25 @@ export interface FragmentSummary {
   sourceFile: string;
 }
 
+/** One captured snapshot of a code-prompt's output (the builder is never run). */
+interface CodePromptSampleSummary {
+  label: string;
+  context?: Context;
+  output: string;
+}
+
+/** A builder-backed prompt as the unified menu/canvas needs it. */
+export interface CodePromptSummary {
+  name: string;
+  description?: string;
+  samples: CodePromptSampleSummary[];
+  sourceFile: string;
+}
+
 /** Response of `GET /api/book`. */
 export interface BookResponse {
   compositions: CompositionSummary[];
+  codePrompts: CodePromptSummary[];
   fragments: FragmentSummary[];
   warnings: string[];
 }

@@ -5,8 +5,10 @@ import { requirePromptsDir } from "../config.js";
 import { emitWarnings, type IO } from "../io.js";
 
 /**
- * `ls`: list compositions (name, base length, rule count) and fragments
- * (id, kind, tags, source). `--fragments`/`--compositions` narrow the output;
+ * `ls`: list compositions (name, base length, rule count), code-prompts
+ * (name, description, sample count) and fragments (id, kind, tags, source) —
+ * the unified menu of every prompt in the book. `--fragments`/`--compositions`
+ * narrow the output (code-prompts ride with compositions, both being prompts);
  * `--json` emits a structured list instead of the human-readable tree.
  */
 export async function cmdLs(args: ParsedArgs, io: IO): Promise<number> {
@@ -23,6 +25,7 @@ export async function cmdLs(args: ParsedArgs, io: IO): Promise<number> {
   const showFragments = args.fragments || !onlyOneSection;
 
   const compositions = [...book.compositions.values()].sort((a, b) => a.name.localeCompare(b.name));
+  const codePrompts = [...book.codePrompts.values()].sort((a, b) => a.name.localeCompare(b.name));
   const fragments = [...book.fragments.values()].sort((a, b) => a.id.localeCompare(b.id));
 
   if (args.json) {
@@ -32,6 +35,11 @@ export async function cmdLs(args: ParsedArgs, io: IO): Promise<number> {
         name: c.name,
         base: c.base.length,
         rules: c.rules.length,
+      }));
+      out.codePrompts = codePrompts.map((c) => ({
+        name: c.name,
+        description: c.description ?? null,
+        samples: c.samples.length,
       }));
     }
     if (showFragments) {
@@ -54,6 +62,13 @@ export async function cmdLs(args: ParsedArgs, io: IO): Promise<number> {
     }
     for (const c of compositions) {
       lines.push(`  ${c.name}  base=${c.base.length}  rules=${c.rules.length}`);
+    }
+    if (codePrompts.length > 0) {
+      lines.push("");
+      lines.push("code-prompts:");
+      for (const c of codePrompts) {
+        lines.push(`  ${c.name}  kind=code  samples=${c.samples.length}`);
+      }
     }
   }
   if (showFragments) {

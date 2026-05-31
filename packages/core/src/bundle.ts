@@ -1,4 +1,4 @@
-import type { Composition, Fragment, PromptBook, Rule } from "./types.js";
+import type { CodePrompt, CodePromptSample, Composition, Fragment, PromptBook, Rule } from "./types.js";
 
 /** Options for {@link serializeBook}. */
 export interface SerializeBookOptions {
@@ -76,6 +76,25 @@ function canonicalComposition(composition: Composition): Record<string, unknown>
   return compact(ordered);
 }
 
+function canonicalCodePromptSample(sample: CodePromptSample): Record<string, unknown> {
+  const ordered: Record<keyof Required<CodePromptSample>, unknown> = {
+    label: sample.label,
+    context: sample.context,
+    output: sample.output,
+  };
+  return compact(ordered);
+}
+
+function canonicalCodePrompt(codePrompt: CodePrompt): Record<string, unknown> {
+  const ordered: Record<keyof Required<CodePrompt>, unknown> = {
+    name: codePrompt.name,
+    description: codePrompt.description,
+    samples: codePrompt.samples.map(canonicalCodePromptSample),
+    sourceFile: codePrompt.sourceFile,
+  };
+  return compact(ordered);
+}
+
 /** Emit `new Map([...])` with one `[key, value]` entry per line (entries pre-sorted). */
 function serializeMap<T>(entries: [string, T][], canonical: (value: T) => unknown): string {
   if (entries.length === 0) {
@@ -89,7 +108,8 @@ function serializeMap<T>(entries: [string, T][], canonical: (value: T) => unknow
 
 /**
  * Serialize a {@link PromptBook} to a deterministic, evaluable expression:
- * `{ fragments: new Map([...]), compositions: new Map([...]), warnings: [...] }`.
+ * `{ fragments: new Map([...]), compositions: new Map([...]),
+ *    codePrompts: new Map([...]), warnings: [...] }`.
  *
  * The result is pure JavaScript (only `new Map`, arrays, object and scalar
  * literals) so it can be embedded in a module or reconstructed directly. Map
@@ -99,8 +119,9 @@ function serializeMap<T>(entries: [string, T][], canonical: (value: T) => unknow
 export function serializeBookExpression(book: PromptBook): string {
   const fragments = serializeMap(sortedEntries(book.fragments), canonicalFragment);
   const compositions = serializeMap(sortedEntries(book.compositions), canonicalComposition);
+  const codePrompts = serializeMap(sortedEntries(book.codePrompts), canonicalCodePrompt);
   const warnings = JSON.stringify(book.warnings);
-  return `{\n  fragments: ${fragments},\n  compositions: ${compositions},\n  warnings: ${warnings},\n}`;
+  return `{\n  fragments: ${fragments},\n  compositions: ${compositions},\n  codePrompts: ${codePrompts},\n  warnings: ${warnings},\n}`;
 }
 
 /**
@@ -128,13 +149,15 @@ export function serializeBook(book: PromptBook, options: SerializeBookOptions = 
 }
 
 /**
- * Serialize a {@link PromptBook} to a deterministic JSON dump: fragments and
- * compositions as key-sorted arrays of their canonical objects, plus warnings.
+ * Serialize a {@link PromptBook} to a deterministic JSON dump: fragments,
+ * compositions and code-prompts as key-sorted arrays of their canonical objects,
+ * plus warnings.
  * Shares the canonical key order and locale-independent sort with
  * {@link serializeBook}, so the JSON and module outputs never drift.
  */
 export function serializeBookJson(book: PromptBook): string {
   const fragments = sortedEntries(book.fragments).map(([, value]) => canonicalFragment(value));
   const compositions = sortedEntries(book.compositions).map(([, value]) => canonicalComposition(value));
-  return `${JSON.stringify({ fragments, compositions, warnings: book.warnings }, null, 2)}\n`;
+  const codePrompts = sortedEntries(book.codePrompts).map(([, value]) => canonicalCodePrompt(value));
+  return `${JSON.stringify({ fragments, compositions, codePrompts, warnings: book.warnings }, null, 2)}\n`;
 }

@@ -1,8 +1,9 @@
 import { relative, sep } from "node:path";
-import type { Composition, Context, Rule } from "@promptbook/core";
+import type { CodePrompt, Composition, Context, Rule } from "@promptbook/core";
 import { estimateTokensByChars, lint, resolveBook } from "@promptbook/core";
 import type {
   BookResponse,
+  CodePromptSummary,
   CompositionSummary,
   LintResponse,
   ResolveResponse,
@@ -45,6 +46,21 @@ function variantsByPrompt(folder: LoadedFolder): Map<string, VariantSummary[]> {
   return byPrompt;
 }
 
+/** Project a code-prompt to the wire shape, relativizing its manifest path. */
+function summarizeCodePrompt(promptsDir: string, codePrompt: CodePrompt): CodePromptSummary {
+  const summary: CodePromptSummary = {
+    name: codePrompt.name,
+    samples: codePrompt.samples.map((s) => ({
+      label: s.label,
+      ...(s.context !== undefined ? { context: s.context } : {}),
+      output: s.output,
+    })),
+    sourceFile: relativeSource(promptsDir, codePrompt.sourceFile),
+  };
+  if (codePrompt.description !== undefined) summary.description = codePrompt.description;
+  return summary;
+}
+
 function summarizeComposition(
   variants: VariantSummary[],
   promptsDir: string,
@@ -68,6 +84,9 @@ export function buildBookResponse(folder: LoadedFolder, promptsDir: string): Boo
   const compositions = [...book.compositions.values()]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((c) => summarizeComposition(variants.get(c.name) ?? [], promptsDir, c));
+  const codePrompts = [...book.codePrompts.values()]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((c) => summarizeCodePrompt(promptsDir, c));
   const fragments = [...book.fragments.values()]
     .sort((a, b) => a.id.localeCompare(b.id))
     .map((f) => ({
@@ -77,7 +96,7 @@ export function buildBookResponse(folder: LoadedFolder, promptsDir: string): Boo
       body: f.body,
       sourceFile: relativeSource(promptsDir, f.sourceFile),
     }));
-  return { compositions, fragments, warnings: book.warnings };
+  return { compositions, codePrompts, fragments, warnings: book.warnings };
 }
 
 /** Resolve a variant and attach the colored segments. Throws on unknown prompt. */

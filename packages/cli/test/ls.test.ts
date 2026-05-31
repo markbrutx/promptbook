@@ -4,17 +4,20 @@ import { capture, promptsDir } from "./helpers.js";
 
 interface LsJson {
   compositions?: { name: string; base: number; rules: number }[];
+  codePrompts?: { name: string; description: string | null; samples: number }[];
   fragments?: { id: string; kind: string | null; tags: string[]; sourceFile: string }[];
 }
 
 describe("ls command", () => {
-  it("lists compositions and fragments by default", async () => {
+  it("lists compositions, code-prompts and fragments by default", async () => {
     const cap = capture();
     const code = await run(["ls", "--dir", promptsDir], cap.io);
     expect(code).toBe(0);
     const out = cap.out();
     expect(out).toContain("compositions:");
     expect(out).toContain("assistant  base=7  rules=3");
+    expect(out).toContain("code-prompts:");
+    expect(out).toContain("digest-table  kind=code  samples=2");
     expect(out).toContain("fragments:");
     expect(out).toContain("voice");
     expect(out).toContain("bans");
@@ -27,25 +30,32 @@ describe("ls command", () => {
     expect(code).toBe(0);
     const parsed = JSON.parse(cap.out()) as LsJson;
     expect(parsed.compositions).toContainEqual({ name: "assistant", base: 7, rules: 3 });
+    expect(parsed.codePrompts).toContainEqual({
+      name: "digest-table",
+      description: expect.stringContaining("variable-length table"),
+      samples: 2,
+    });
     const ids = (parsed.fragments ?? []).map((f) => f.id);
     expect(ids).toContain("voice");
     expect(ids).toContain("tech-note");
   });
 
-  it("narrows to compositions only", async () => {
+  it("narrows to compositions (with code-prompts) only", async () => {
     const cap = capture();
     const code = await run(["ls", "--dir", promptsDir, "--compositions"], cap.io);
     expect(code).toBe(0);
     expect(cap.out()).toContain("compositions:");
+    expect(cap.out()).toContain("code-prompts:");
     expect(cap.out()).not.toContain("fragments:");
   });
 
-  it("narrows to fragments only", async () => {
+  it("narrows to fragments only (no code-prompts)", async () => {
     const cap = capture();
     const code = await run(["ls", "--dir", promptsDir, "--fragments"], cap.io);
     expect(code).toBe(0);
     expect(cap.out()).toContain("fragments:");
     expect(cap.out()).not.toContain("compositions:");
+    expect(cap.out()).not.toContain("code-prompts:");
   });
 
   it("narrows JSON output to a single section", async () => {

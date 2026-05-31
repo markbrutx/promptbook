@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import type { Composition, Fragment, FsAdapter, PromptBook, Rule } from "../src/index.js";
+import type { CodePrompt, Composition, Fragment, FsAdapter, PromptBook, Rule } from "../src/index.js";
 
 /** Absolute path to a folder under `test/fixtures`. */
 export function fixtureDir(name: string): string {
@@ -20,11 +20,16 @@ export function composition(name: string, base: string[], rules: Rule[] = [], or
   return comp;
 }
 
-/** Assemble an in-memory PromptBook from fragments and compositions. */
-export function book(fragments: Fragment[], compositions: Composition[]): PromptBook {
+/** Assemble an in-memory PromptBook from fragments, compositions and code-prompts. */
+export function book(
+  fragments: Fragment[],
+  compositions: Composition[],
+  codePrompts: CodePrompt[] = [],
+): PromptBook {
   return {
     fragments: new Map(fragments.map((f) => [f.id, f])),
     compositions: new Map(compositions.map((c) => [c.name, c])),
+    codePrompts: new Map(codePrompts.map((c) => [c.name, c])),
     warnings: [],
   };
 }

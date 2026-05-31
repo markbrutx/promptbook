@@ -429,6 +429,42 @@ input {
   white-space: nowrap;
 }
 
+.badge-code {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #2b2b40;
+  color: #fff;
+}
+
+/* Code-prompt canvas */
+.code-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.code-tab {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.code-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.code-diff {
+  margin-top: 18px;
+}
+
 .tokens {
   font-size: 20px;
   font-weight: 600;

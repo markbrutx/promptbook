@@ -1,3 +1,4 @@
+import { kvLabel } from "../format.js";
 import type { LintResponse, Trace, When } from "../types.js";
 
 interface AddonsProps {
@@ -6,8 +7,7 @@ interface AddonsProps {
 }
 
 function whenLabel(when: When): string {
-  const entries = Object.entries(when);
-  return entries.length === 0 ? "always" : entries.map(([k, v]) => `${k}=${v}`).join(", ");
+  return Object.keys(when).length === 0 ? "always" : kvLabel(when);
 }
 
 /** Lint findings panel: severity-tagged messages with the fragment/rule origin. */

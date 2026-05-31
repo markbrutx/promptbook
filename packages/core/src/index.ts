@@ -63,6 +63,8 @@ export { resolve } from "./resolve.js";
 export { resolveBook } from "./resolve-book.js";
 export type {
   AddTrace,
+  CodePrompt,
+  CodePromptSample,
   Composition,
   Context,
   ContextValue,

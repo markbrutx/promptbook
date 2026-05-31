@@ -73,5 +73,63 @@ describe("loadPrompts", () => {
     const loadedBook = await loadPrompts("/does/not/exist", memoryFs({}));
     expect(loadedBook.fragments.size).toBe(0);
     expect(loadedBook.compositions.size).toBe(0);
+    expect(loadedBook.codePrompts.size).toBe(0);
+  });
+});
+
+describe("loadPrompts: code-prompts", () => {
+  it("loads code-prompts with inline and file-backed samples (no warnings)", async () => {
+    const loadedBook = await loadPrompts(fixtureDir("sample"));
+    const digest = loadedBook.codePrompts.get("digest-table");
+    expect(digest).toBeDefined();
+    expect(digest?.description).toContain("variable-length table");
+    expect(digest?.samples.map((s) => s.label)).toEqual(["empty", "filled"]);
+    // Inline `output` is kept verbatim; `file` is read from the sibling file.
+    expect(digest?.samples[0]?.output).toBe("No rows to summarize yet.\n");
+    expect(digest?.samples[0]?.context).toEqual({ rows: 0 });
+    expect(digest?.samples[1]?.output).toContain("Summary table (3 rows):");
+    expect(loadedBook.warnings).toEqual([]);
+  });
+
+  it("is absent (empty map) when the folder has no code-prompts dir", async () => {
+    const fs = memoryFs({ "/p/fragments/a.md": "---\nid: a\n---\nA" });
+    const loadedBook = await loadPrompts("/p", fs);
+    expect(loadedBook.codePrompts.size).toBe(0);
+    expect(loadedBook.warnings).toEqual([]);
+  });
+
+  it("warns (never throws) on a missing sample file and a sample lacking output/file", async () => {
+    const fs = memoryFs({
+      "/p/fragments/a.md": "---\nid: a\n---\nA",
+      "/p/code-prompts/cp.yaml":
+        "name: cp\nsamples:\n  - label: gone\n    file: nope.txt\n  - label: bare\n  - label: ok\n    output: hi\n",
+    });
+    const loadedBook = await loadPrompts("/p", fs);
+    const cp = loadedBook.codePrompts.get("cp");
+    // Only the well-formed sample survives; the rest become warnings.
+    expect(cp?.samples.map((s) => s.label)).toEqual(["ok"]);
+    expect(loadedBook.warnings.some((w) => /missing file "nope\.txt"/.test(w))).toBe(true);
+    expect(loadedBook.warnings.some((w) => /must set "output" or "file"/.test(w))).toBe(true);
+  });
+
+  it("warns on a non-mapping manifest and skips it", async () => {
+    const fs = memoryFs({
+      "/p/fragments/a.md": "---\nid: a\n---\nA",
+      "/p/code-prompts/broken.yaml": "- just\n- a\n- list\n",
+    });
+    const loadedBook = await loadPrompts("/p", fs);
+    expect(loadedBook.codePrompts.size).toBe(0);
+    expect(loadedBook.warnings.some((w) => /empty or not a mapping/.test(w))).toBe(true);
+  });
+
+  it("defaults the name to the file stem and warns on a duplicate", async () => {
+    const fs = memoryFs({
+      "/p/fragments/a.md": "---\nid: a\n---\nA",
+      "/p/code-prompts/widget.yaml": "samples: []\n",
+      "/p/code-prompts/dup.yaml": "name: widget\nsamples: []\n",
+    });
+    const loadedBook = await loadPrompts("/p", fs);
+    expect(loadedBook.codePrompts.has("widget")).toBe(true);
+    expect(loadedBook.warnings.some((w) => /Duplicate code-prompt name "widget"/.test(w))).toBe(true);
   });
 });

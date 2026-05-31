@@ -69,10 +69,42 @@ export interface Composition {
   sourceFile: string;
 }
 
-/** A loaded prompts folder: fragments + compositions + load-time warnings. */
+/**
+ * A captured snapshot of a builder-backed prompt's output. The core never
+ * runs the builder; it only stores the frozen text so the registry can show it.
+ */
+export interface CodePromptSample {
+  /** Label identifying the sample, e.g. a scenario name. */
+  label: string;
+  /** Optional context the sample was captured under. */
+  context?: Context;
+  /** The captured builder output, stored verbatim. */
+  output: string;
+}
+
+/**
+ * A builder-backed prompt registered in the book (the HOW lives in code, not in
+ * rules). The core holds metadata plus captured {@link CodePromptSample}s and
+ * **never executes the builder** — it stays dumb and deterministic. This lets a
+ * book index every prompt of a domain, computed ones included, as one menu.
+ */
+export interface CodePrompt {
+  /** Lookup name, e.g. "quiz-pack". */
+  name: string;
+  /** Optional human description. */
+  description?: string;
+  /** Captured output samples (snapshots, not live executions). */
+  samples: CodePromptSample[];
+  /** Manifest file the code-prompt was loaded from. */
+  sourceFile: string;
+}
+
+/** A loaded prompts folder: fragments + compositions + code-prompts + load-time warnings. */
 export interface PromptBook {
   fragments: Map<string, Fragment>;
   compositions: Map<string, Composition>;
+  /** Builder-backed prompts registered with snapshot output (never executed). */
+  codePrompts: Map<string, CodePrompt>;
   warnings: string[];
 }
 

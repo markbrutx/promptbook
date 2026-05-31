@@ -29,6 +29,7 @@ function portableBook(book: PromptBook, dir: string): PromptBook {
   return {
     fragments: relativizeMap(book.fragments, dir),
     compositions: relativizeMap(book.compositions, dir),
+    codePrompts: relativizeMap(book.codePrompts, dir),
     warnings: book.warnings,
   };
 }

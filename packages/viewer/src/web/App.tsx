@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api.js";
 import { Addons } from "./components/Addons.js";
 import { Canvas } from "./components/Canvas.js";
+import { CodePromptView } from "./components/CodePromptView.js";
 import { Controls } from "./components/Controls.js";
 import { Diff } from "./components/Diff.js";
 import { FragmentView } from "./components/FragmentView.js";
@@ -161,6 +162,10 @@ export function App() {
     [compositions],
   );
 
+  const selectCode = useCallback((name: string, sample: string) => {
+    setSelection({ kind: "code", name, sample });
+  }, []);
+
   const selectFragment = useCallback((id: string) => {
     setSelection({ kind: "fragment", id });
   }, []);
@@ -195,10 +200,13 @@ export function App() {
     );
   }, [annotations, selection, context]);
 
-  const tree = useMemo(() => buildCompositionTree(compositions), [compositions]);
+  const codePrompts = book?.codePrompts ?? [];
+  const tree = useMemo(() => buildCompositionTree(compositions, codePrompts), [compositions, codePrompts]);
   const fragmentGroups = useMemo(() => buildFragmentGroups(book?.fragments ?? []), [book]);
   const selectedFragment =
     selection?.kind === "fragment" ? book?.fragments.find((f) => f.id === selection.id) : undefined;
+  const selectedCodePrompt =
+    selection?.kind === "code" ? codePrompts.find((c) => c.name === selection.name) : undefined;
 
   return (
     <div className="layout">
@@ -207,6 +215,7 @@ export function App() {
         fragmentGroups={fragmentGroups}
         selection={selection}
         onSelectVariant={selectVariant}
+        onSelectCode={selectCode}
         onSelectFragment={selectFragment}
       />
 
@@ -224,6 +233,14 @@ export function App() {
           tokens={lint?.tokens}
           annotations={variantAnnotations}
           onAnnotate={addAnnotation}
+        />
+      ) : null}
+
+      {error === null && selection?.kind === "code" && selectedCodePrompt !== undefined ? (
+        <CodePromptView
+          codePrompt={selectedCodePrompt}
+          sample={selection.sample}
+          onSelectSample={(label) => selectCode(selectedCodePrompt.name, label)}
         />
       ) : null}
 

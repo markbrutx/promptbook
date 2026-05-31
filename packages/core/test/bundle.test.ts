@@ -63,12 +63,25 @@ describe("serializeBook", () => {
     expect(serializeBookJson(reloaded)).toBe(serializeBookJson(original));
   });
 
-  it("preserves fragments, compositions and warnings exactly", async () => {
+  it("round-trips code-prompts (snapshot output survives a bundle)", async () => {
+    const original = await loadPrompts(dir);
+    expect(original.codePrompts.has("digest-table")).toBe(true);
+    const restored = restore(serializeBookExpression(original));
+
+    const before = original.codePrompts.get("digest-table");
+    const after = restored.codePrompts.get("digest-table");
+    expect(after?.description).toBe(before?.description);
+    expect(after?.samples).toEqual(before?.samples);
+    expect(after?.sourceFile).toBe(before?.sourceFile);
+  });
+
+  it("preserves fragments, compositions, code-prompts and warnings exactly", async () => {
     const original = await loadPrompts(dir);
     const restored = restore(serializeBookExpression(original));
 
     expect([...restored.fragments.keys()].sort()).toEqual([...original.fragments.keys()].sort());
     expect([...restored.compositions.keys()].sort()).toEqual([...original.compositions.keys()].sort());
+    expect([...restored.codePrompts.keys()].sort()).toEqual([...original.codePrompts.keys()].sort());
     expect(restored.warnings).toEqual(original.warnings);
     const voice = restored.fragments.get("voice");
     expect(voice?.body).toBe(original.fragments.get("voice")?.body);
@@ -144,13 +157,20 @@ describe("serializeBook", () => {
     };
     expect(parsed.fragments.map((f) => f.id)).toContain("voice");
     expect(parsed.compositions.map((c) => c.name)).toContain("assistant");
+    const withCode = JSON.parse(json) as { codePrompts: { name: string }[] };
+    expect(withCode.codePrompts.map((c) => c.name)).toContain("digest-table");
     // Key-sorted, locale-independent order.
     const ids = parsed.fragments.map((f) => f.id);
     expect(ids).toEqual([...ids].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)));
   });
 
   it("serializes an empty book without dangling commas", () => {
-    const empty: PromptBook = { fragments: new Map(), compositions: new Map(), warnings: [] };
+    const empty: PromptBook = {
+      fragments: new Map(),
+      compositions: new Map(),
+      codePrompts: new Map(),
+      warnings: [],
+    };
     const expression = serializeBookExpression(empty);
     expect(expression).toContain("new Map([])");
     const restored = restore(expression);

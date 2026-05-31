@@ -6,6 +6,7 @@ export type {
   Annotation,
   AnnotationsResponse,
   BookResponse,
+  CodePromptSummary,
   CompositionSummary,
   FragmentSummary,
   LintResponse,
