@@ -12,10 +12,10 @@ describe("agnosticism guard", () => {
     expect(await findDomainLeaks(scanDirs)).toEqual([]);
   });
 
-  it("depends only on @promptbook/core at runtime", async () => {
+  it("depends only on @markbrutx/promptbook-core at runtime", async () => {
     const pkg = JSON.parse(await readFile(pkgPath, "utf8")) as {
       dependencies?: Record<string, string>;
     };
-    expect(Object.keys(pkg.dependencies ?? {})).toEqual(["@promptbook/core"]);
+    expect(Object.keys(pkg.dependencies ?? {})).toEqual(["@markbrutx/promptbook-core"]);
   });
 });

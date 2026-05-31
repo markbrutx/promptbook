@@ -98,7 +98,7 @@ describe("serializeBook", () => {
   it("emits an importable module exporting book: PromptBook", async () => {
     const book = await loadPrompts(dir);
     const module = serializeBook(book);
-    expect(module).toContain('import type { PromptBook } from "@promptbook/core";');
+    expect(module).toContain('import type { PromptBook } from "@markbrutx/promptbook-core";');
     expect(module).toContain("export const book: PromptBook = {");
     expect(module).toContain("export default book;");
     expect(module).toContain("new Map([");

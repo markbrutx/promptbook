@@ -28,10 +28,10 @@ describe("agnosticism guard", () => {
     }
     // Only the core and the model adapter; no third-party CLI/UI libraries.
     expect(Object.keys(pkg.dependencies ?? {}).sort()).toEqual([
-      "@promptbook/core",
-      "@promptbook/openrouter",
+      "@markbrutx/promptbook-core",
+      "@markbrutx/promptbook-openrouter",
     ]);
     // The viewer is an optional dependency (lazily imported by `view`).
-    expect(Object.keys(pkg.optionalDependencies ?? {})).toEqual(["@promptbook/viewer"]);
+    expect(Object.keys(pkg.optionalDependencies ?? {})).toEqual(["@markbrutx/promptbook-viewer"]);
   });
 });

@@ -1,5 +1,5 @@
-import type { PromptBook } from "@promptbook/core";
-import { iterateReferences } from "@promptbook/core";
+import type { PromptBook } from "@markbrutx/promptbook-core";
+import { iterateReferences } from "@markbrutx/promptbook-core";
 import type { UsedInReference } from "../shared/types.js";
 
 /**

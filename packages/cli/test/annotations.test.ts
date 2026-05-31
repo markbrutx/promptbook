@@ -1,4 +1,4 @@
-import type { Annotation } from "@promptbook/core";
+import type { Annotation } from "@markbrutx/promptbook-core";
 import { describe, expect, it } from "vitest";
 import { run } from "../src/run.js";
 import { capture, memoryFs } from "./helpers.js";

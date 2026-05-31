@@ -1,5 +1,5 @@
 import { relative } from "node:path";
-import { loadPrompts } from "@promptbook/core";
+import { loadPrompts } from "@markbrutx/promptbook-core";
 import type { ParsedArgs } from "../args.js";
 import { requirePromptsDir } from "../config.js";
 import { emitWarnings, type IO } from "../io.js";

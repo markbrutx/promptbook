@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { Annotation, AnnotationAnchor, AnnotationTarget, Context } from "@promptbook/core";
+import type { Annotation, AnnotationAnchor, AnnotationTarget, Context } from "@markbrutx/promptbook-core";
 import {
   ANNOTATION_QUEUE_DIR,
   ANNOTATION_QUEUE_FILE,
   parseInbox,
   serializeAnnotationLine,
   serializeInbox,
-} from "@promptbook/core";
+} from "@markbrutx/promptbook-core";
 
 /** The flat body the viewer posts; the store expands it into an {@link Annotation}. */
 export interface AnnotateInput {
@@ -58,7 +58,7 @@ function buildAnnotation(input: AnnotateInput): Annotation {
 /**
  * File-backed annotation queue. Appends are line-atomic (one JSONL line);
  * removals rewrite the file. A missing queue simply reads as empty. This is the
- * viewer's only write surface — `@promptbook/core` stays read-only.
+ * viewer's only write surface — `@markbrutx/promptbook-core` stays read-only.
  */
 export function createAnnotationStore(promptsDir: string): AnnotationStore {
   const dir = join(promptsDir, ANNOTATION_QUEUE_DIR);

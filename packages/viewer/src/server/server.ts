@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { type FSWatcher, watch } from "node:fs";
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
-import type { FsAdapter } from "@promptbook/core";
+import type { FsAdapter } from "@markbrutx/promptbook-core";
 import { createRequestHandler } from "./api.js";
 import { createBookSource } from "./book-source.js";
 

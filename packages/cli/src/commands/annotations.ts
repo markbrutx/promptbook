@@ -1,6 +1,11 @@
 import { join } from "node:path";
-import type { Annotation } from "@promptbook/core";
-import { ANNOTATION_QUEUE_DIR, ANNOTATION_QUEUE_FILE, parseInbox, serializeInbox } from "@promptbook/core";
+import type { Annotation } from "@markbrutx/promptbook-core";
+import {
+  ANNOTATION_QUEUE_DIR,
+  ANNOTATION_QUEUE_FILE,
+  parseInbox,
+  serializeInbox,
+} from "@markbrutx/promptbook-core";
 import type { ParsedArgs } from "../args.js";
 import { requirePromptsDir } from "../config.js";
 import type { IO } from "../io.js";

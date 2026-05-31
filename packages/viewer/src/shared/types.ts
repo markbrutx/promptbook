@@ -1,7 +1,7 @@
 /**
  * Wire types shared by the server and the web app. These are the JSON shapes
  * the `/api/*` routes speak; importing them on both sides keeps the contract
- * in one place. Only type-only imports from `@promptbook/core` are used so the
+ * in one place. Only type-only imports from `@markbrutx/promptbook-core` are used so the
  * file carries no runtime dependency.
  */
 import type {
@@ -12,9 +12,9 @@ import type {
   RuleAction,
   Trace,
   When,
-} from "@promptbook/core";
+} from "@markbrutx/promptbook-core";
 
-export type { Annotation } from "@promptbook/core";
+export type { Annotation } from "@markbrutx/promptbook-core";
 
 /** A rule reduced to what the viewer renders (no behavior, just the shape). */
 export interface RuleSummary {

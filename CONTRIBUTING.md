@@ -5,7 +5,7 @@ way; please read them before opening a PR.
 
 ## 1. Keep the shippable surface domain-agnostic
 
-`@promptbook/core`, `@promptbook/cli` and `@promptbook/openrouter` know nothing
+`@markbrutx/promptbook-core`, `@markbrutx/promptbook-cli` and `@markbrutx/promptbook-openrouter` know nothing
 about any specific application. They only **select**, **order**, **interpolate**,
 **lint** and **eval** prompt fragments.
 

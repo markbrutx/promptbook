@@ -1,5 +1,5 @@
-import type { Context, PromptBook } from "@promptbook/core";
-import { interpolate } from "@promptbook/core";
+import type { Context, PromptBook } from "@markbrutx/promptbook-core";
+import { interpolate } from "@markbrutx/promptbook-core";
 import type { Segment } from "../shared/types.js";
 
 /**

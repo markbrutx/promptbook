@@ -1,4 +1,4 @@
-import type { ContextValue } from "@promptbook/core";
+import type { ContextValue } from "@markbrutx/promptbook-core";
 
 /** Render a context/when bag as `k=v, k=v` (empty string when empty). */
 export function formatContext(context: Record<string, ContextValue>): string {

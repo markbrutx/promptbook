@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
-import type { FsAdapter } from "@promptbook/core";
-import { nodeFs } from "@promptbook/core";
+import type { FsAdapter } from "@markbrutx/promptbook-core";
+import { nodeFs } from "@markbrutx/promptbook-core";
 import type { IO } from "../src/io.js";
 
 /** Absolute path to a folder under `test/fixtures`. */

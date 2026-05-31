@@ -1,4 +1,4 @@
-import type { AssertionResult, EvalReport, FixtureResult } from "@promptbook/core";
+import type { AssertionResult, EvalReport, FixtureResult } from "@markbrutx/promptbook-core";
 import { makeStyle, plural, type Style } from "./style.js";
 
 function rate(value: number): string {

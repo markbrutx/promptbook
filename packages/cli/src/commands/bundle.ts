@@ -1,6 +1,6 @@
 import { isAbsolute, relative, resolve as resolvePath, sep } from "node:path";
-import type { PromptBook } from "@promptbook/core";
-import { loadPrompts, serializeBook, serializeBookJson } from "@promptbook/core";
+import type { PromptBook } from "@markbrutx/promptbook-core";
+import { loadPrompts, serializeBook, serializeBookJson } from "@markbrutx/promptbook-core";
 import type { ParsedArgs } from "../args.js";
 import { requirePromptsDir } from "../config.js";
 import { emitWarnings, type IO } from "../io.js";

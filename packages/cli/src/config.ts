@@ -1,5 +1,5 @@
 import { resolve as resolvePath } from "node:path";
-import type { Context, ContextValue } from "@promptbook/core";
+import type { Context, ContextValue } from "@markbrutx/promptbook-core";
 import type { IO } from "./io.js";
 
 const NUMERIC = /^-?\d+(?:\.\d+)?$/;

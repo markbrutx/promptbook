@@ -1,5 +1,5 @@
-import type { Fixture, FsAdapter, PromptBook } from "@promptbook/core";
-import { loadFixtures, loadPrompts } from "@promptbook/core";
+import type { Fixture, FsAdapter, PromptBook } from "@markbrutx/promptbook-core";
+import { loadFixtures, loadPrompts } from "@markbrutx/promptbook-core";
 
 /** A loaded prompts folder plus the fixtures that supply named variants. */
 export interface LoadedFolder {

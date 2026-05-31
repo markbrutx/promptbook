@@ -19,7 +19,7 @@ const NOT_BUILT = `<!doctype html><meta charset="utf-8"><title>promptbook viewer
 <body style="font-family:system-ui;padding:2rem;line-height:1.5">
 <h1>promptbook viewer</h1>
 <p>The web bundle was not found. Build it with:</p>
-<pre>npm -w @promptbook/viewer run build</pre>
+<pre>npm -w @markbrutx/promptbook-viewer run build</pre>
 <p>The API is live at <code>/api/book</code>.</p>`;
 
 /** Resolve a request path to a file inside the web root, blocking traversal. */

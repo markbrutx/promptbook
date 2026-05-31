@@ -1,4 +1,4 @@
-import { resolveBook } from "@promptbook/core";
+import { resolveBook } from "@markbrutx/promptbook-core";
 import { describe, expect, it } from "vitest";
 import { createBookSource } from "../src/server/book-source.js";
 import {

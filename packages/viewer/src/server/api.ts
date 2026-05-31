@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { Context } from "@promptbook/core";
+import type { Context } from "@markbrutx/promptbook-core";
 import type { AnnotateRequest, ResolveRequest } from "../shared/types.js";
 import { type AnnotateInput, createAnnotationStore } from "./annotations.js";
 import type { BookSource } from "./book-source.js";

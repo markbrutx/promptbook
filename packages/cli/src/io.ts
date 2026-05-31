@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import type { FsAdapter, ModelAdapter } from "@promptbook/core";
-import { nodeFs } from "@promptbook/core";
+import type { FsAdapter, ModelAdapter } from "@markbrutx/promptbook-core";
+import { nodeFs } from "@markbrutx/promptbook-core";
 
 /** Options the `eval` command needs to build a model adapter. */
 export interface AdapterOptions {

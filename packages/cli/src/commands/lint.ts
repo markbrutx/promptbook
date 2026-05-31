@@ -1,5 +1,5 @@
-import type { DefaultRulesOptions, LintReport } from "@promptbook/core";
-import { defaultRules, lint, loadPrompts, resolveBook } from "@promptbook/core";
+import type { DefaultRulesOptions, LintReport } from "@markbrutx/promptbook-core";
+import { defaultRules, lint, loadPrompts, resolveBook } from "@markbrutx/promptbook-core";
 import type { ParsedArgs } from "../args.js";
 import { buildContext, lintConfigFrom, loadConfig, requirePromptsDir } from "../config.js";
 import { colorEnabled, emitWarnings, type IO } from "../io.js";

@@ -1,4 +1,4 @@
-import type { ModelAdapter } from "@promptbook/core";
+import type { ModelAdapter } from "@markbrutx/promptbook-core";
 import { afterEach, describe, expect, it } from "vitest";
 import type { IO } from "../src/io.js";
 import { run } from "../src/run.js";

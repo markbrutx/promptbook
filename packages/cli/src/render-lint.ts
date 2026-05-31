@@ -1,4 +1,4 @@
-import type { LintFinding, LintReport, Severity } from "@promptbook/core";
+import type { LintFinding, LintReport, Severity } from "@markbrutx/promptbook-core";
 import { makeStyle, plural, type Style } from "./style.js";
 
 const SEVERITY_ORDER: Severity[] = ["error", "warning", "info"];

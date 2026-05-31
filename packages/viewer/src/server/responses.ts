@@ -1,6 +1,6 @@
 import { relative, sep } from "node:path";
-import type { CodePrompt, Composition, Context, Rule } from "@promptbook/core";
-import { estimateTokensByChars, lint, resolveBook } from "@promptbook/core";
+import type { CodePrompt, Composition, Context, Rule } from "@markbrutx/promptbook-core";
+import { estimateTokensByChars, lint, resolveBook } from "@markbrutx/promptbook-core";
 import type {
   BookResponse,
   CodePromptSummary,

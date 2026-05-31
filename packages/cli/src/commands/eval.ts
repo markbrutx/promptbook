@@ -1,6 +1,20 @@
-import type { EvalReport, Fixture, LintFinding, LintRule, ModelAdapter, PromptBook } from "@promptbook/core";
-import { defaultRules, evaluate, lint, loadFixtures, loadPrompts, resolveBook } from "@promptbook/core";
-import { openRouterAdapter } from "@promptbook/openrouter";
+import type {
+  EvalReport,
+  Fixture,
+  LintFinding,
+  LintRule,
+  ModelAdapter,
+  PromptBook,
+} from "@markbrutx/promptbook-core";
+import {
+  defaultRules,
+  evaluate,
+  lint,
+  loadFixtures,
+  loadPrompts,
+  resolveBook,
+} from "@markbrutx/promptbook-core";
+import { openRouterAdapter } from "@markbrutx/promptbook-openrouter";
 import type { ParsedArgs } from "../args.js";
 import { type EvalConfig, evalConfigFrom, loadConfig, requirePromptsDir } from "../config.js";
 import { type AdapterOptions, colorEnabled, type IO } from "../io.js";

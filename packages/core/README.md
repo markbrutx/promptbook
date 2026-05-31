@@ -1,4 +1,4 @@
-# @promptbook/core
+# @markbrutx/promptbook-core
 
 Agnostic, deterministic core for composing prompts from reusable fragments via
 declarative rules. No CLI, no UI, no domain knowledge — it only **selects**,
@@ -28,7 +28,7 @@ prompts/
 ## Usage
 
 ```ts
-import { resolve } from "@promptbook/core";
+import { resolve } from "@markbrutx/promptbook-core";
 
 const { text, trace } = await resolve({
   promptsDir: "./prompts",

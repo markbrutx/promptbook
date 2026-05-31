@@ -5,7 +5,7 @@
  * behind an injectable {@link ModelAdapter}. The engine's control flow is
  * deterministic: given the same adapter outputs it returns the same report.
  * The core ships no adapter and makes no network calls — a concrete adapter
- * (e.g. `@promptbook/openrouter`) lives in its own package.
+ * (e.g. `@markbrutx/promptbook-openrouter`) lives in its own package.
  */
 import type { Context, PromptBook } from "../types.js";
 

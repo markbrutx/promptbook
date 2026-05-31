@@ -1,4 +1,4 @@
-import type { ModelAdapter, ModelRequest, ModelResponse, ModelUsage } from "@promptbook/core";
+import type { ModelAdapter, ModelRequest, ModelResponse, ModelUsage } from "@markbrutx/promptbook-core";
 
 /** OpenRouter chat-completions base URL (no trailing slash). */
 const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
@@ -57,7 +57,7 @@ async function readErrorBody(response: Response): Promise<string> {
  * Build a {@link ModelAdapter} backed by OpenRouter's chat-completions API.
  *
  * This is the one piece that performs network IO; the eval engine in
- * `@promptbook/core` only sees the adapter interface. The request maps
+ * `@markbrutx/promptbook-core` only sees the adapter interface. The request maps
  * `{ system, input }` to `system`/`user` messages and parses the first
  * choice's content back into `{ text, usage, raw }`. A missing key (option or
  * env) or a non-2xx response raises a clear error.

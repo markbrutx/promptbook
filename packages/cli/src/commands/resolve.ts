@@ -1,5 +1,5 @@
-import type { ResolveResult } from "@promptbook/core";
-import { resolve } from "@promptbook/core";
+import type { ResolveResult } from "@markbrutx/promptbook-core";
+import { resolve } from "@markbrutx/promptbook-core";
 import type { ParsedArgs } from "../args.js";
 import { buildContext, requirePromptsDir } from "../config.js";
 import { colorEnabled, emitWarnings, type IO } from "../io.js";

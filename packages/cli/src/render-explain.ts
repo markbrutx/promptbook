@@ -1,4 +1,4 @@
-import type { ContextValue, Trace } from "@promptbook/core";
+import type { ContextValue, Trace } from "@markbrutx/promptbook-core";
 import { formatContext, makeStyle } from "./style.js";
 
 function whenLabel(when: Record<string, ContextValue>): string {

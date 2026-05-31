@@ -1,4 +1,4 @@
-import { resolve } from "@promptbook/core";
+import { resolve } from "@markbrutx/promptbook-core";
 import { describe, expect, it } from "vitest";
 import { renderExplain } from "../src/render-explain.js";
 import { promptsDir } from "./helpers.js";

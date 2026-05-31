@@ -2,7 +2,7 @@ import type { ParsedArgs } from "../args.js";
 import { requirePromptsDir } from "../config.js";
 import type { IO } from "../io.js";
 
-/** Options forwarded to `@promptbook/viewer`'s `startViewer`. */
+/** Options forwarded to `@markbrutx/promptbook-viewer`'s `startViewer`. */
 export interface ViewerStartOptions {
   promptsDir: string;
   port?: number;
@@ -17,7 +17,7 @@ export interface ViewerHandle {
 
 /**
  * Injectable seam for `view`: how to start the viewer and how to keep the
- * process alive. Defaults dynamically import the optional `@promptbook/viewer`
+ * process alive. Defaults dynamically import the optional `@markbrutx/promptbook-viewer`
  * package and block until a termination signal; tests inject fakes so no
  * server or signal handling is needed.
  */
@@ -37,7 +37,7 @@ const defaultViewDeps: ViewDeps = {
   async start(options) {
     let mod: ViewerModule;
     try {
-      mod = (await import("@promptbook/viewer")) as unknown as ViewerModule;
+      mod = (await import("@markbrutx/promptbook-viewer")) as unknown as ViewerModule;
     } catch {
       throw new ViewerNotInstalledError();
     }
@@ -70,7 +70,7 @@ export async function cmdView(args: ParsedArgs, io: IO, deps: ViewDeps = default
     handle = await deps.start({ promptsDir, port: args.port, open: !args.noOpen });
   } catch (error) {
     if (error instanceof ViewerNotInstalledError) {
-      io.stderr('error: the viewer is not installed. Add it with "npm i -D @promptbook/viewer".\n');
+      io.stderr('error: the viewer is not installed. Add it with "npm i -D @markbrutx/promptbook-viewer".\n');
       return 1;
     }
     io.stderr(`error: ${(error as Error).message}\n`);

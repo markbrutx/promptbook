@@ -1,5 +1,5 @@
-import type { Context, PromptBook } from "@promptbook/core";
-import { resolve, resolveBook } from "@promptbook/core";
+import type { Context, PromptBook } from "@markbrutx/promptbook-core";
+import { resolve, resolveBook } from "@markbrutx/promptbook-core";
 import { describe, expect, it } from "vitest";
 import { run } from "../src/run.js";
 import { capture, promptsDir } from "./helpers.js";
@@ -29,7 +29,7 @@ describe("bundle command", () => {
     const code = await run(["bundle", "--dir", promptsDir], cap.io);
     expect(code).toBe(0);
     const out = cap.out();
-    expect(out).toContain('import type { PromptBook } from "@promptbook/core";');
+    expect(out).toContain('import type { PromptBook } from "@markbrutx/promptbook-core";');
     expect(out).toContain("export const book: PromptBook = {");
     expect(out).toContain("export default book;");
     expect(out).toContain("new Map([");
