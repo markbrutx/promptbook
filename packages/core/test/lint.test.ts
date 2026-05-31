@@ -294,6 +294,43 @@ describe("dead-rule", () => {
     const report = lint({ book: b }, [deadRule()]);
     expect(report.findings).toHaveLength(0);
   });
+
+  it("accepts mutually-exclusive single-axis swaps of the same base fragment", () => {
+    const b = book(
+      [fragment("base", "base"), fragment("x", "x"), fragment("y", "y")],
+      [
+        composition(
+          "comp",
+          ["base"],
+          [
+            { index: 0, when: { tone: "x" }, action: "replace", replace: { base: "x" } },
+            { index: 1, when: { tone: "y" }, action: "replace", replace: { base: "y" } },
+          ],
+        ),
+      ],
+    );
+    const report = lint({ book: b }, [deadRule()]);
+    expect(report.findings).toHaveLength(0);
+  });
+
+  it("still flags a replace whose source an unconditional earlier rule consumed", () => {
+    const b = book(
+      [fragment("a", "a"), fragment("b", "b"), fragment("c", "c")],
+      [
+        composition(
+          "comp",
+          ["a"],
+          [
+            { index: 0, when: {}, action: "replace", replace: { a: "b" } },
+            { index: 1, when: {}, action: "replace", replace: { a: "c" } },
+          ],
+        ),
+      ],
+    );
+    const report = lint({ book: b }, [deadRule()]);
+    expect(report.warningCount).toBe(1);
+    expect(report.findings[0]?.ruleIndex).toBe(1);
+  });
 });
 
 describe("defaultRules", () => {

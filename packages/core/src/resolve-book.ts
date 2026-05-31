@@ -155,7 +155,7 @@ function matchWhen(when: When, context: Context): WhenMatch {
   return { fired: true };
 }
 
-function valuesEqual(a: ContextValue, b: ContextValue): boolean {
+export function valuesEqual(a: ContextValue, b: ContextValue): boolean {
   return String(a) === String(b);
 }
 
