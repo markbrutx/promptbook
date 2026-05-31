@@ -6,8 +6,8 @@
       "project": "test-support/**/*.ts"
     },
     "packages/core": {
-      "entry": ["src/index.ts", "test/**/*.test.ts"],
-      "project": "src/**/*.ts"
+      "entry": ["src/index.ts", "src/edge.ts", "test/**/*.test.ts"],
+      "project": ["src/**/*.ts", "scripts/**/*.mjs"]
     },
     "packages/cli": {
       "entry": ["src/index.ts", "bin/promptbook.ts", "test/**/*.test.ts"],

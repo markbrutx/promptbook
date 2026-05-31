@@ -1,4 +1,4 @@
-import { resolveBook } from "../resolve.js";
+import { resolveBook } from "../resolve-book.js";
 import { defaultAssertions } from "./assertions.js";
 import type {
   Assertion,

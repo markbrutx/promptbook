@@ -59,7 +59,8 @@ export {
 } from "./lint/rules/index.js";
 export type { LintFinding, LintInput, LintReport, LintRule, LintScope, Severity } from "./lint/types.js";
 export { loadPrompts } from "./load.js";
-export { resolve, resolveBook } from "./resolve.js";
+export { resolve } from "./resolve.js";
+export { resolveBook } from "./resolve-book.js";
 export type {
   AddTrace,
   Composition,
