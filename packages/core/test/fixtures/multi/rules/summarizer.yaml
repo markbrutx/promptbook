@@ -1,0 +1,20 @@
+name: summarizer
+# Second composition in the same folder over a shared fragment pool: `locale`
+# and `input` are reused from the assistant composition; the sum-* fragments
+# are summarizer-specific. This is what makes the folder a multi-composition book.
+base:
+  - sum-voice
+  - sum-task
+  - locale
+  - input
+  - sum-json
+rules:
+  - when:
+      mode: terse
+    replace:
+      sum-voice: sum-terse-voice
+  - when:
+      mode: terse
+    add:
+      - sum-tighten
+    after: sum-task

@@ -10,6 +10,7 @@ import {
 import { composition, fixtureDir, fragment, book as makeBook } from "./helpers.js";
 
 const dir = fixtureDir("sample");
+const multiDir = fixtureDir("multi");
 
 /** Reconstruct a PromptBook from a serialized expression (pure JS, only `new Map`). */
 function restore(expression: string): PromptBook {
@@ -35,6 +36,31 @@ describe("serializeBook", () => {
       expect(b.text).toBe(a.text);
       expect(b.trace.finalOrder).toEqual(a.trace.finalOrder);
     }
+  });
+
+  it("round-trips a multi-composition book: every composition resolves identically after a bundle", async () => {
+    const original = await loadPrompts(multiDir);
+    // Sanity: the folder really holds more than one composition over a shared pool.
+    expect([...original.compositions.keys()].sort()).toEqual(["assistant", "summarizer"]);
+    const restored = restore(serializeBookExpression(original));
+
+    for (const name of original.compositions.keys()) {
+      for (const context of contexts) {
+        const a = resolveBook(original, name, context);
+        const b = resolveBook(restored, name, context);
+        expect(b.text).toBe(a.text);
+        expect(b.trace.finalOrder).toEqual(a.trace.finalOrder);
+      }
+    }
+  });
+
+  it("re-bundling a multi-composition folder is byte-identical", async () => {
+    const original = await loadPrompts(multiDir);
+    expect(serializeBook(original)).toBe(serializeBook(original));
+    // A reload of the same folder bundles to the same bytes (no Map-order drift
+    // across the two compositions or their shared fragments).
+    const reloaded = await loadPrompts(multiDir);
+    expect(serializeBookJson(reloaded)).toBe(serializeBookJson(original));
   });
 
   it("preserves fragments, compositions and warnings exactly", async () => {

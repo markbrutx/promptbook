@@ -1,0 +1,17 @@
+name: assistant
+base:
+  - voice
+  - frame
+  - locale
+  - input
+  - json
+rules:
+  - when:
+      mode: terse
+    replace:
+      voice: terse-voice
+  - when:
+      mode: terse
+    add:
+      - tighten
+    after: frame
