@@ -10,7 +10,7 @@ interface VariantNode {
 /** A composition leaf in the sidebar; its variants render when expanded. */
 interface CompositionNode {
   type: "composition";
-  /** Full composition name (path-like, e.g. `cover-letter/quick`). */
+  /** Full composition name (path-like, e.g. `assistant/terse`). */
   name: string;
   /** Last path segment, shown as the leaf label. */
   label: string;
