@@ -9,7 +9,7 @@
     "node": ">=20.6"
   },
   "scripts": {
-    "build": "npm -ws --if-present run build",
+    "build": "npm run build --if-present -w @markbrutx/promptbook-core -w @markbrutx/promptbook-openrouter -w @markbrutx/promptbook-viewer -w @markbrutx/promptbook-cli",
     "typecheck": "npm -ws --if-present run typecheck",
     "test": "npm -ws --if-present run test",
     "check": "npm -ws --if-present run check && npm run deadcode",
