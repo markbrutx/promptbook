@@ -1,0 +1,11 @@
+name: escalation
+# A second composition over the same fragment pool. persona, guardrails and
+# locale are reused from `reply`; the used-in graph shows exactly which
+# fragments are shared across the menu (the "shared for 10 of 20 places" pain).
+base:
+  - persona
+  - guardrails
+  - escalation-task
+  - escalation-format
+  - escalation-input
+  - locale

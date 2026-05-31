@@ -1,0 +1,4 @@
+3 open tickets:
+1. billing question - waiting on customer
+2. login error - investigating
+3. export delay - fix in review

@@ -1,0 +1,10 @@
+{
+  "name": "gpt-json",
+  "prompt": "reply",
+  "context": { "model": "gpt", "tone": "warm", "locale": "English" },
+  "input": "I was charged twice this month. What happened?",
+  "assert": [
+    { "type": "json-valid" },
+    { "type": "contains", "value": "reply" }
+  ]
+}

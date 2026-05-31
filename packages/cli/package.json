@@ -4,6 +4,23 @@
   "description": "Thin terminal surface over @markbrutx/promptbook-core: resolve and ls for agents and CI.",
   "type": "module",
   "license": "MIT",
+  "keywords": [
+    "prompt",
+    "prompt-engineering",
+    "prompt-management",
+    "llm",
+    "ai",
+    "cli",
+    "composition",
+    "storybook"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markbrutx/promptbook.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/markbrutx/promptbook#readme",
+  "bugs": "https://github.com/markbrutx/promptbook/issues",
   "bin": {
     "promptbook": "dist/bin/promptbook.js"
   },

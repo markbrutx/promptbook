@@ -6,10 +6,18 @@ import { CLI_UI_DEPS, findDomainLeaks } from "../../../test-support/agnostic-gua
 const pkgPath = fileURLToPath(new URL("../package.json", import.meta.url));
 // Shippable surface + test fixtures. Domain leaks must not appear in any of these.
 const scanDirs = ["../src", "../test"].map((rel) => fileURLToPath(new URL(rel, import.meta.url)));
+// The repo-root `examples/` is a public, shipped artifact (the launch demo), so
+// it must stay as agnostic as the packages. It lives outside any package, so the
+// core guard (closest to the shared scanner) owns scanning it.
+const examplesDir = fileURLToPath(new URL("../../../examples", import.meta.url));
 
 describe("agnosticism guard", () => {
   it("contains no domain strings in src or test fixtures", async () => {
     expect(await findDomainLeaks(scanDirs)).toEqual([]);
+  });
+
+  it("contains no domain strings in the examples/ demos", async () => {
+    expect(await findDomainLeaks([examplesDir])).toEqual([]);
   });
 
   it("does not depend on CLI/UI libraries", async () => {

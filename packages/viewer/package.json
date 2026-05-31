@@ -4,6 +4,23 @@
   "description": "Storybook-for-prompts: a local web app that renders a prompts folder via @markbrutx/promptbook-core.",
   "type": "module",
   "license": "MIT",
+  "keywords": [
+    "prompt",
+    "prompt-engineering",
+    "prompt-management",
+    "llm",
+    "ai",
+    "viewer",
+    "storybook",
+    "composition"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markbrutx/promptbook.git",
+    "directory": "packages/viewer"
+  },
+  "homepage": "https://github.com/markbrutx/promptbook#readme",
+  "bugs": "https://github.com/markbrutx/promptbook/issues",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

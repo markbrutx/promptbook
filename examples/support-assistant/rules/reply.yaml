@@ -1,0 +1,28 @@
+name: reply
+# Base order: persona first, the language-directive (locale) last. Both sit at
+# an edge so the language-directive-position lint stays happy.
+base:
+  - persona
+  - reply-tone-warm
+  - guardrails
+  - reply-task
+  - reply-format-prose
+  - locale
+rules:
+  # Tone is one context axis: swap the whole tone fragment, no string-building.
+  - when:
+      tone: terse
+    replace:
+      reply-tone-warm: reply-tone-terse
+
+  # Multi-model compilation (the differentiator): the target model is just
+  # another context axis, and the output contract a model wants is just a rule.
+  # The same logical prompt compiles to a different format per model.
+  - when:
+      model: gpt
+    replace:
+      reply-format-prose: reply-format-json
+  - when:
+      model: claude
+    replace:
+      reply-format-prose: reply-format-xml

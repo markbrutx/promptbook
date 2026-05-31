@@ -4,6 +4,22 @@
   "description": "OpenRouter ModelAdapter for @markbrutx/promptbook-core eval. Network lives here; core stays pure.",
   "type": "module",
   "license": "MIT",
+  "keywords": [
+    "prompt",
+    "prompt-engineering",
+    "llm",
+    "ai",
+    "openrouter",
+    "eval",
+    "model-adapter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markbrutx/promptbook.git",
+    "directory": "packages/openrouter"
+  },
+  "homepage": "https://github.com/markbrutx/promptbook#readme",
+  "bugs": "https://github.com/markbrutx/promptbook/issues",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

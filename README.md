@@ -10,6 +10,40 @@ written like sticky notes. promptbook treats them as code: which fragments are
 shared, what is safe to change, and what the final prompt looks like under a
 given context are all answerable without running a single model call.
 
+## Quickstart
+
+Point the CLI at a prompts folder and assemble a prompt. The
+[`examples/support-assistant`](examples/support-assistant) demo is ready to run:
+
+```bash
+npx @markbrutx/promptbook-cli ls --dir examples/support-assistant
+npx @markbrutx/promptbook-cli resolve reply --dir examples/support-assistant \
+  --ctx model=claude --ctx locale=English --explain
+npx @markbrutx/promptbook-cli view --dir examples/support-assistant   # the web viewer
+```
+
+Or use the library:
+
+```bash
+npm i @markbrutx/promptbook-core
+```
+
+```ts
+import { resolve } from "@markbrutx/promptbook-core";
+
+const { text, trace } = await resolve({
+  promptsDir: "./examples/support-assistant",
+  prompt: "reply",
+  context: { model: "claude", locale: "English" },
+});
+```
+
+`text` is the fragments joined with `\n\n`, in final order, with `${...}`
+substituted. `trace` is the explain output: every rule (fired + why), the final
+id order, what was replaced / added / forbidden, context axes no rule matched,
+and warnings. A missing `${var}` renders empty and is recorded in
+`trace.warnings` — the engine never throws on data.
+
 ## The model: WHAT / WHEN / HOW
 
 - **WHAT — `fragment`** — a reusable micro-prompt: a Markdown file with YAML
@@ -24,6 +58,65 @@ the resolver is the cascade. Assembly is deterministic (same folder + context �
 byte-identical string); the only stochastic step, the model call, lives behind
 an adapter.
 
+A prompts folder looks like:
+
+```
+prompts/
+├─ fragments/     *.md     (text + frontmatter)              — WHAT
+├─ rules/         *.yaml    (one composition per file)       — WHEN
+├─ code-prompts/  *.yaml    (builder metadata + samples)     — computed prompts in the menu
+└─ fixtures/      *.json    (eval cases / named variants)
+```
+
+A book indexes **every** prompt of a domain as one menu. A node is either a
+**composition** (declarative, assembled by `resolve`) or a **code-prompt** — a
+builder that stays in code, where the book holds only its metadata and frozen
+output samples and the core never executes it. Declarative prompts compose;
+genuinely computed ones still register and show up in `ls` and the viewer with a
+`code` badge, so the menu is complete and honest.
+
+## Multi-model compilation
+
+The target model is just another context axis, and the output format a model
+wants is just a rule — so one logical prompt compiles to a different contract per
+model, from a single shared definition:
+
+```yaml
+- when: { model: gpt }
+  replace: { reply-format-prose: reply-format-json }   # JSON object contract
+- when: { model: claude }
+  replace: { reply-format-prose: reply-format-xml }    # XML-tagged output
+```
+
+Incumbents store a flat string per model. Here the model and its format are one
+axis over one prompt. See it end to end in
+[`examples/support-assistant`](examples/support-assistant).
+
+## CLI
+
+```
+promptbook resolve <prompt>   Assemble a prompt and print it to stdout
+promptbook ls                 List compositions, code-prompts and fragments
+promptbook lint [<prompt>]    Static checks (no model): dead/unused/dangling, budget, banned tokens
+promptbook eval [<name>]      Run fixtures through a model adapter, report pass-rate
+promptbook bundle [<dir>]     Compile a folder into an importable book module
+promptbook view               Start the local web viewer over the folder
+promptbook annotations <a>    Drain the viewer's feedback queue: list | resolve <id> | clear
+```
+
+`--dir` picks the folder (else `promptbook.json` `promptsDir`, else `./prompts`);
+`--ctx key=value` sets context; `--json` emits machine-readable output. stdout is
+the payload, stderr is explanations and warnings, and `NO_COLOR` is honored.
+
+## Viewer
+
+`promptbook view` opens a local web app over the folder: a sidebar tree of
+compositions, variants and fragments; the assembled prompt with colored segments
+by source fragment; context pickers that re-assemble live; a used-in graph
+(which prompts share a fragment); variant diff; and inline lint + explain. Select
+text, attach a comment, and it lands in a file queue an agent drains via
+`promptbook annotations`.
+
 ## Packages
 
 | Package | What it is |
@@ -32,32 +125,6 @@ an adapter.
 | [`@markbrutx/promptbook-cli`](packages/cli) | `promptbook resolve \| ls \| lint \| eval \| bundle \| view \| annotations`. The surface for agents and CI. |
 | [`@markbrutx/promptbook-viewer`](packages/viewer) | `promptbook view` → a local web app. Sidebar tree, colored segments, context pickers, used-in graph, diff, annotate-to-agent. |
 | [`@markbrutx/promptbook-openrouter`](packages/openrouter) | OpenRouter `ModelAdapter` for `eval`. Network lives here; core stays pure. |
-
-## Usage
-
-```ts
-import { resolve } from "@markbrutx/promptbook-core";
-
-const { text, trace } = await resolve({
-  promptsDir: "./prompts",
-  prompt: "assistant",
-  context: { mode: "terse", locale: "ru", subjectName: "Ada" },
-});
-```
-
-`text` is the fragments joined with `\n\n`, in final order, with `${...}`
-substituted. `trace` is the explain output: every rule (fired + why), the final
-id order, what was replaced / added / forbidden, context axes no rule matched,
-and warnings. A missing `${var}` renders empty and is recorded in
-`trace.warnings` — the engine never throws on data.
-
-A prompts folder looks like:
-
-```
-prompts/
-├─ fragments/   *.md    (text + frontmatter)
-└─ rules/       *.yaml   (composition + rules)
-```
 
 ## Develop
 

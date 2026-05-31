@@ -1,0 +1,14 @@
+name: status-digest
+description: >-
+  Builds a variable-length status digest from the open tickets at runtime. The
+  row count and order are computed in code, so this stays a builder (a
+  code-prompt): the book holds only metadata and frozen output samples, and the
+  core never executes it.
+samples:
+  - label: empty
+    context: { open: 0 }
+    output: |
+      No open tickets right now.
+  - label: filled
+    context: { open: 3 }
+    file: status-digest.sample.txt

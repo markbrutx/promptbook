@@ -4,6 +4,23 @@
   "description": "Agnostic, deterministic core for composing prompts from reusable fragments via declarative rules.",
   "type": "module",
   "license": "MIT",
+  "keywords": [
+    "prompt",
+    "prompt-engineering",
+    "prompt-management",
+    "llm",
+    "ai",
+    "composition",
+    "deterministic",
+    "agnostic"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markbrutx/promptbook.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/markbrutx/promptbook#readme",
+  "bugs": "https://github.com/markbrutx/promptbook/issues",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

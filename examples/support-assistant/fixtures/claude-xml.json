@@ -1,0 +1,9 @@
+{
+  "name": "claude-xml",
+  "prompt": "reply",
+  "context": { "model": "claude", "tone": "terse", "locale": "English" },
+  "input": "My export has been stuck for an hour.",
+  "assert": [
+    { "type": "contains", "value": "<reply>" }
+  ]
+}
