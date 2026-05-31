@@ -340,6 +340,86 @@ input {
   color: var(--muted);
 }
 
+/* Annotations */
+.annot-mark {
+  background: #fff3b0;
+  border-bottom: 2px solid var(--warn);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.annot-popover {
+  position: fixed;
+  z-index: 20;
+  width: 280px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+.annot-popover textarea {
+  width: 100%;
+  min-height: 64px;
+  resize: vertical;
+  margin: 6px 0;
+}
+
+.annot-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+}
+
+.annot-actions button[type="button"]:last-child {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--accent);
+  color: #fff;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.annot-actions button[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.annot-quote {
+  margin: 0;
+  font-style: italic;
+  color: var(--muted);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.annot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.annot-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.annot-comment {
+  margin: 4px 0;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.annot-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
 /* Shared */
 .badge {
   font-size: 12px;

@@ -16,6 +16,9 @@ coverage/
 # sandbox for testing against real downstream projects — never committed
 tmp/
 
+# viewer→agent feedback queue (local, per prompts folder)
+**/.annotations/
+
 # internal, local-only docs
 CLAUDE.md
 VISION.md

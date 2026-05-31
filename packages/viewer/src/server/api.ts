@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Context } from "@promptbook/core";
-import type { ResolveRequest } from "../shared/types.js";
+import type { AnnotateRequest, ResolveRequest } from "../shared/types.js";
+import { type AnnotateInput, createAnnotationStore } from "./annotations.js";
 import type { BookSource } from "./book-source.js";
 import {
   buildBookResponse,
@@ -50,9 +51,39 @@ function asResolveRequest(body: unknown): { prompt: string; context: Context } {
   return { prompt: data.prompt, context: data.context ?? {} };
 }
 
+function asAnnotateRequest(body: unknown): AnnotateInput {
+  const data = (body ?? {}) as Partial<AnnotateRequest>;
+  if (typeof data.fragmentId !== "string" || data.fragmentId === "") {
+    throw new Error('request body must include a "fragmentId"');
+  }
+  if (typeof data.anchorText !== "string" || data.anchorText === "") {
+    throw new Error('request body must include "anchorText"');
+  }
+  if (typeof data.comment !== "string" || data.comment.trim() === "") {
+    throw new Error('request body must include a non-empty "comment"');
+  }
+  const input: AnnotateInput = {
+    fragmentId: data.fragmentId,
+    anchorText: data.anchorText,
+    comment: data.comment,
+  };
+  if (typeof data.prompt === "string" && data.prompt !== "") {
+    input.prompt = data.prompt;
+    input.context = data.context ?? {};
+  }
+  if (typeof data.offset === "number") {
+    input.offset = data.offset;
+  }
+  if (typeof data.sourceFile === "string") {
+    input.sourceFile = data.sourceFile;
+  }
+  return input;
+}
+
 export function createRequestHandler(options: RequestHandlerOptions): RequestHandler {
   const { source, promptsDir, webRoot } = options;
   const sseClients = new Set<ServerResponse>();
+  const annotations = createAnnotationStore(promptsDir);
 
   const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     const url = new URL(req.url ?? "/", "http://localhost");
@@ -77,6 +108,21 @@ export function createRequestHandler(options: RequestHandlerOptions): RequestHan
       if (path.startsWith("/api/used-in/") && method === "GET") {
         const id = decodeURIComponent(path.slice("/api/used-in/".length));
         sendJson(res, 200, buildUsedInResponse(await source.get(), id));
+        return;
+      }
+      if (path === "/api/annotate" && method === "POST") {
+        const annotation = await annotations.append(asAnnotateRequest(await readJsonBody(req)));
+        sendJson(res, 200, annotation);
+        return;
+      }
+      if (path === "/api/annotations" && method === "GET") {
+        sendJson(res, 200, { annotations: await annotations.list() });
+        return;
+      }
+      if (path.startsWith("/api/annotations/") && method === "DELETE") {
+        const id = decodeURIComponent(path.slice("/api/annotations/".length));
+        const removed = await annotations.remove(id);
+        sendJson(res, removed ? 200 : 404, { id, removed });
         return;
       }
       if (path === "/api/events" && method === "GET") {

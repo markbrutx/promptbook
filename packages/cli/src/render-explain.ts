@@ -1,9 +1,9 @@
 import type { ContextValue, Trace } from "@promptbook/core";
-import { makeStyle } from "./style.js";
+import { formatContext, makeStyle } from "./style.js";
 
 function whenLabel(when: Record<string, ContextValue>): string {
-  const parts = Object.entries(when).map(([key, value]) => `${key}=${value}`);
-  return parts.length > 0 ? parts.join(", ") : "always";
+  const label = formatContext(when);
+  return label === "" ? "always" : label;
 }
 
 /**

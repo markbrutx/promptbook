@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseCliArgs } from "./args.js";
+import { cmdAnnotations } from "./commands/annotations.js";
 import { cmdBundle } from "./commands/bundle.js";
 import { cmdEval } from "./commands/eval.js";
 import { cmdLint } from "./commands/lint.js";
@@ -20,6 +21,7 @@ Commands:
   eval [<name|glob>]      Run fixtures through a model adapter, report pass-rate
   bundle [<dir>]          Compile a prompts folder into an importable book module
   view                    Start the local web viewer over the prompts folder
+  annotations <action>    Drain the viewer's feedback queue: list | resolve <id> | clear
   ls                      List compositions and fragments
 
 Options:
@@ -94,6 +96,8 @@ export async function run(argv: string[], io: IO = defaultIO()): Promise<number>
       return cmdBundle(args, io);
     case "view":
       return cmdView(args, io);
+    case "annotations":
+      return cmdAnnotations(args, io);
     case "ls":
       return cmdLs(args, io);
     default:

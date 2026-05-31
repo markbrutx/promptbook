@@ -9,6 +9,7 @@ import { Sidebar } from "./components/Sidebar.js";
 import type { Selection } from "./selection.js";
 import { buildCompositionTree, buildFragmentGroups, DEFAULT_VARIANT } from "./tree.js";
 import type {
+  Annotation,
   BookResponse,
   CompositionSummary,
   Context,
@@ -16,6 +17,11 @@ import type {
   ResolveResponse,
   UsedInResponse,
 } from "./types.js";
+
+/** Order-independent key for comparing two contexts (variant identity). */
+function contextKey(context: Context): string {
+  return JSON.stringify(Object.entries(context).sort(([a], [b]) => a.localeCompare(b)));
+}
 
 /** The context a named variant carries (Default = empty). */
 function variantContext(composition: CompositionSummary | undefined, variant: string): Context {
@@ -49,7 +55,17 @@ export function App() {
   const [usedIn, setUsedIn] = useState<UsedInResponse | null>(null);
   const [compareVariant, setCompareVariant] = useState<string>("");
   const [compareResolved, setCompareResolved] = useState<ResolveResponse | null>(null);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const requestId = useRef(0);
+
+  const loadAnnotations = useCallback(async () => {
+    try {
+      const { annotations: next } = await api.annotations();
+      setAnnotations(next);
+    } catch {
+      setAnnotations([]);
+    }
+  }, []);
 
   const loadBook = useCallback(async () => {
     try {
@@ -72,7 +88,8 @@ export function App() {
         setContext({});
       }
     });
-  }, [loadBook]);
+    void loadAnnotations();
+  }, [loadBook, loadAnnotations]);
 
   // Hot-reload: refetch the book on folder changes. The new book object is a
   // fresh reference, so the resolve/used-in effects below re-run automatically.
@@ -148,6 +165,36 @@ export function App() {
     setSelection({ kind: "fragment", id });
   }, []);
 
+  const addAnnotation = useCallback(
+    async (fragmentId: string, anchorText: string, comment: string) => {
+      if (selection?.kind !== "variant") {
+        return;
+      }
+      await api.annotate({ prompt: selection.composition, context, fragmentId, anchorText, comment });
+      await loadAnnotations();
+    },
+    [selection, context, loadAnnotations],
+  );
+
+  const resolveAnnotation = useCallback(
+    async (id: string) => {
+      await api.resolveAnnotation(id);
+      await loadAnnotations();
+    },
+    [loadAnnotations],
+  );
+
+  // Annotations belonging to exactly the variant on screen (composition + context).
+  const variantAnnotations = useMemo(() => {
+    if (selection?.kind !== "variant") {
+      return [];
+    }
+    const key = contextKey(context);
+    return annotations.filter(
+      (a) => a.target.prompt === selection.composition && contextKey(a.target.context ?? {}) === key,
+    );
+  }, [annotations, selection, context]);
+
   const tree = useMemo(() => buildCompositionTree(compositions), [compositions]);
   const fragmentGroups = useMemo(() => buildFragmentGroups(book?.fragments ?? []), [book]);
   const selectedFragment =
@@ -175,6 +222,8 @@ export function App() {
           subtitle={selection.variant}
           segments={resolved.segments}
           tokens={lint?.tokens}
+          annotations={variantAnnotations}
+          onAnnotate={addAnnotation}
         />
       ) : null}
 
@@ -211,6 +260,27 @@ export function App() {
                 rightText={resolved.text}
               />
             ) : null}
+          </section>
+          <section>
+            <h3>Annotations</h3>
+            {variantAnnotations.length === 0 ? (
+              <p className="muted">None yet. Select text in the prompt to leave a comment for the agent.</p>
+            ) : (
+              <ul className="annot-list">
+                {variantAnnotations.map((a) => (
+                  <li key={a.id}>
+                    <p className="annot-quote">“{a.anchor.anchorText}”</p>
+                    <p className="annot-comment">{a.comment}</p>
+                    <div className="annot-meta">
+                      <code className="muted">{a.anchor.fragmentId}</code>
+                      <button type="button" className="link" onClick={() => void resolveAnnotation(a.id)}>
+                        Resolve
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
           <Addons trace={resolved.trace} lint={lint} />
         </aside>

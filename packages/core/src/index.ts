@@ -1,3 +1,16 @@
+export type {
+  Annotation,
+  AnnotationAnchor,
+  AnnotationStatus,
+  AnnotationTarget,
+} from "./annotations.js";
+export {
+  ANNOTATION_QUEUE_DIR,
+  ANNOTATION_QUEUE_FILE,
+  parseInbox,
+  serializeAnnotationLine,
+  serializeInbox,
+} from "./annotations.js";
 export type { SerializeBookOptions } from "./bundle.js";
 export { serializeBook, serializeBookExpression, serializeBookJson } from "./bundle.js";
 export { defaultAssertions } from "./eval/assertions.js";

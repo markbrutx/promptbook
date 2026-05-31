@@ -2,6 +2,9 @@
 // wire DTOs. Everything here is type-only and erased from the bundle.
 export type { Context, ContextValue, Trace, When } from "@promptbook/core";
 export type {
+  AnnotateRequest,
+  Annotation,
+  AnnotationsResponse,
   BookResponse,
   CompositionSummary,
   FragmentSummary,

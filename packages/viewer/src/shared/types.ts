@@ -4,7 +4,17 @@
  * in one place. Only type-only imports from `@promptbook/core` are used so the
  * file carries no runtime dependency.
  */
-import type { Context, FragmentReference, LintFinding, RuleAction, Trace, When } from "@promptbook/core";
+import type {
+  Annotation,
+  Context,
+  FragmentReference,
+  LintFinding,
+  RuleAction,
+  Trace,
+  When,
+} from "@promptbook/core";
+
+export type { Annotation } from "@promptbook/core";
 
 /** A rule reduced to what the viewer renders (no behavior, just the shape). */
 export interface RuleSummary {
@@ -91,4 +101,21 @@ export interface UsedInReference {
 export interface UsedInResponse {
   fragmentId: string;
   references: UsedInReference[];
+}
+
+/** Request body for `POST /api/annotate`. */
+export interface AnnotateRequest {
+  /** Composition of the annotated variant (omit when targeting a fragment). */
+  prompt?: string;
+  context?: Context;
+  fragmentId: string;
+  anchorText: string;
+  comment: string;
+  offset?: number;
+  sourceFile?: string;
+}
+
+/** Response of `GET /api/annotations`. */
+export interface AnnotationsResponse {
+  annotations: Annotation[];
 }

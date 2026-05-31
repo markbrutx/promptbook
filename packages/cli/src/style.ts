@@ -1,3 +1,12 @@
+import type { ContextValue } from "@promptbook/core";
+
+/** Render a context/when bag as `k=v, k=v` (empty string when empty). */
+export function formatContext(context: Record<string, ContextValue>): string {
+  return Object.entries(context)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(", ");
+}
+
 /** Minimal ANSI styling, used by the explain and lint renderers. */
 export interface Style {
   bold(text: string): string;
