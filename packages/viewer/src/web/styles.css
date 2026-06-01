@@ -44,10 +44,11 @@ body {
 }
 
 .sidebar-logo {
-  width: 148px;
-  max-width: 100%;
+  width: 168px;
+  max-width: 80%;
   height: auto;
   display: block;
+  margin: 8px auto 4px;
 }
 
 .book-switcher {
