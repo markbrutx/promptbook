@@ -1,6 +1,6 @@
 {
   "name": "@markbrutx/promptbook-openrouter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenRouter ModelAdapter for @markbrutx/promptbook-core eval. Network lives here; core stays pure.",
   "type": "module",
   "license": "MIT",
@@ -43,7 +43,7 @@
     "check": "biome check ."
   },
   "dependencies": {
-    "@markbrutx/promptbook-core": "^0.1.0"
+    "@markbrutx/promptbook-core": "^0.2.0"
   },
   "devDependencies": {
     "@biomejs/biome": "latest",
