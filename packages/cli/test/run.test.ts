@@ -8,7 +8,8 @@ describe("run: top-level dispatch", () => {
     const code = await run(["--help"], cap.io);
     expect(code).toBe(0);
     expect(cap.out()).toContain("Usage:");
-    expect(cap.out()).toContain("resolve <prompt>");
+    expect(cap.out()).toContain("resolve [<book>/]<prompt>");
+    expect(cap.out()).toContain("--all");
     expect(cap.out()).toContain("ls");
     expect(cap.err()).toBe("");
   });

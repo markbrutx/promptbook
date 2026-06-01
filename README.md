@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/promptbook-logo.png" alt="promptbook" width="360" /></p>
+
 # promptbook
 
 **Storybook for prompts.** Compose system prompts from reusable fragments by
@@ -95,8 +97,8 @@ axis over one prompt. See it end to end in
 ## CLI
 
 ```
-promptbook resolve <prompt>   Assemble a prompt and print it to stdout
-promptbook ls                 List compositions, code-prompts and fragments
+promptbook resolve <prompt>   Assemble a prompt and print it to stdout (--all: every book)
+promptbook ls                 List compositions, code-prompts and fragments (--all: cross-book)
 promptbook lint [<prompt>]    Static checks (no model): dead/unused/dangling, budget, banned tokens
 promptbook eval [<name>]      Run fixtures through a model adapter, report pass-rate
 promptbook bundle [<dir>]     Compile a folder into an importable book module
@@ -107,6 +109,26 @@ promptbook annotations <a>    Drain the viewer's feedback queue: list | resolve 
 `--dir` picks the folder (else `promptbook.json` `promptsDir`, else `./prompts`);
 `--ctx key=value` sets context; `--json` emits machine-readable output. stdout is
 the payload, stderr is explanations and warnings, and `NO_COLOR` is honored.
+
+## Workspaces
+
+A folder can be one book (`fragments/` + `rules/`) or a **workspace** of sibling
+books. The CLI and viewer discover the books under a root and address them
+without juggling one `--dir` at a time:
+
+```bash
+promptbook ls --all --json           # cross-book inventory: each book's
+                                     # compositions, code-prompts + required context
+promptbook resolve <book>/<comp>     # address a composition in a named book
+promptbook resolve <comp>            # bare name resolves by uniqueness across books
+promptbook resolve --all             # assemble every composition of every book
+promptbook view                      # one viewer with a book switcher in the sidebar
+```
+
+Each composition declares the context it needs — the `${var}` keys across its
+reachable fragments and the `when:`-axes its rules branch on — so you can supply
+defaults instead of chasing `Missing variable` warnings one at a time. A
+single-book `--dir` keeps working unqualified (back-compat).
 
 ## Viewer
 

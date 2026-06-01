@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { run } from "../src/run.js";
-import { capture, promptsDir } from "./helpers.js";
+import { capture, fixtureDir, promptsDir } from "./helpers.js";
 
 const subject = ["--ctx", "subjectName=Ada", "--ctx", "notesDigest=thin metrics"];
 
@@ -104,5 +104,84 @@ describe("resolve command", () => {
     await run(explainArgs, plain.io);
     // biome-ignore lint/suspicious/noControlCharactersInRegex: asserting no ANSI escapes.
     expect(plain.err()).not.toMatch(/\x1b\[/);
+  });
+});
+
+interface ResolveAllJson {
+  [key: string]:
+    | { kind: "composition"; text: string; trace: { prompt: string } }
+    | { kind: "code-prompt"; samples: { label: string; output: string }[] };
+}
+
+describe("resolve addressing + --all (workspace)", () => {
+  const workspaceDir = fixtureDir("workspace");
+
+  it("assembles a qualified <book>/<comp> address", async () => {
+    const cap = capture();
+    const code = await run(
+      ["resolve", "greeter/greeting", "--dir", workspaceDir, "--ctx", "name=Ada"],
+      cap.io,
+    );
+    expect(code).toBe(0);
+    expect(cap.out()).toContain("Hello Ada, glad you are here.");
+  });
+
+  it("resolves a unique bare name across books", async () => {
+    const cap = capture();
+    const code = await run(["resolve", "digest", "--dir", workspaceDir, "--ctx", "topic=onboarding"], cap.io);
+    expect(code).toBe(0);
+    expect(cap.out()).toContain("Summarize onboarding in three tight bullet points.");
+  });
+
+  it("errors clearly for a bare name in no book", async () => {
+    const cap = capture();
+    const code = await run(["resolve", "ghost", "--dir", workspaceDir], cap.io);
+    expect(code).toBe(1);
+    expect(cap.err()).toContain('Unknown prompt "ghost" in any book');
+    expect(cap.out()).toBe("");
+  });
+
+  it("assembles every composition and lists code-prompts as inventory (--all --json)", async () => {
+    const cap = capture();
+    const code = await run(
+      ["resolve", "--all", "--json", "--dir", workspaceDir, "--ctx", "name=Ada", "--ctx", "topic=onboarding"],
+      cap.io,
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(cap.out()) as ResolveAllJson;
+    // Deterministic key order: by book then by node name.
+    expect(Object.keys(parsed)).toEqual(["greeter/greeting", "summarizer/digest", "summarizer/table"]);
+    const greeting = parsed["greeter/greeting"];
+    expect(greeting?.kind).toBe("composition");
+    if (greeting?.kind === "composition") {
+      expect(greeting.text).toContain("Hello Ada");
+    }
+    const table = parsed["summarizer/table"];
+    expect(table?.kind).toBe("code-prompt");
+    if (table?.kind === "code-prompt") {
+      expect(table.samples[0]?.label).toBe("short");
+    }
+  });
+
+  it("prints composition blocks with headers and notes skipped code-prompts (--all plain)", async () => {
+    const cap = capture();
+    const code = await run(
+      ["resolve", "--all", "--dir", workspaceDir, "--ctx", "name=Ada", "--ctx", "topic=onboarding"],
+      cap.io,
+    );
+    expect(code).toBe(0);
+    expect(cap.out()).toContain("=== greeter/greeting ===");
+    expect(cap.out()).toContain("=== summarizer/digest ===");
+    expect(cap.out()).not.toContain("summarizer/table");
+    expect(cap.err()).toContain("skipped 1 code-prompt(s)");
+    expect(cap.err()).toContain("summarizer/table");
+  });
+
+  it("surfaces missing-var warnings on stderr without throwing (--all)", async () => {
+    const cap = capture();
+    const code = await run(["resolve", "--all", "--dir", workspaceDir], cap.io);
+    expect(code).toBe(0);
+    expect(cap.err()).toContain("warning:");
+    expect(cap.err()).toContain('greeter/greeting: Missing variable "name"');
   });
 });

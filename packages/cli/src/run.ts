@@ -16,13 +16,16 @@ Usage:
   promptbook <command> [options]
 
 Commands:
-  resolve <prompt>        Assemble a prompt and print it to stdout
+  resolve [<book>/]<prompt>  Assemble a prompt and print it to stdout (--all: every book)
   lint [<prompt>]         Run static checks; with no prompt, book rules only
   eval [<name|glob>]      Run fixtures through a model adapter, report pass-rate
   bundle [<dir>]          Compile a prompts folder into an importable book module
-  view                    Start the local web viewer over the prompts folder
+  view                    Start the local web viewer over the workspace (book switcher)
   annotations <action>    Drain the viewer's feedback queue: list | resolve <id> | clear
-  ls                      List compositions and fragments
+  ls                      List compositions and fragments (--all: cross-book inventory)
+
+A <book>/<comp> operand addresses one book in a multi-book workspace; a bare
+name resolves by uniqueness. With a single-book --dir, names work unqualified.
 
 Options:
   --dir <path>            Prompts folder (default: promptbook.json promptsDir, else ./prompts)
@@ -42,6 +45,7 @@ Options:
   --no-open               view: do not open the browser after starting
   --fragments             ls: list fragments only
   --compositions          ls: list compositions only
+  --all                   ls/resolve: span every book in the workspace
   -h, --help              Show this help
   -v, --version           Show the version
 

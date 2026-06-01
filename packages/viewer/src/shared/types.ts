@@ -68,6 +68,17 @@ export interface CodePromptSummary {
   sourceFile: string;
 }
 
+/** One book in the workspace, as `GET /api/books` lists it. */
+export interface WorkspaceBook {
+  name: string;
+  dir: string;
+}
+
+/** Response of `GET /api/books`: the switcher menu. */
+export interface BooksResponse {
+  books: WorkspaceBook[];
+}
+
 /** Response of `GET /api/book`. */
 export interface BookResponse {
   compositions: CompositionSummary[];

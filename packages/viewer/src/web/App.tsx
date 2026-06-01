@@ -17,6 +17,7 @@ import type {
   LintResponse,
   ResolveResponse,
   UsedInResponse,
+  WorkspaceBook,
 } from "./types.js";
 
 /** Order-independent key for comparing two contexts (variant identity). */
@@ -47,6 +48,8 @@ function controlKeys(composition: CompositionSummary | undefined): string[] {
 }
 
 export function App() {
+  const [books, setBooks] = useState<WorkspaceBook[]>([]);
+  const [activeBook, setActiveBook] = useState<string | null>(null);
   const [book, setBook] = useState<BookResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -58,19 +61,34 @@ export function App() {
   const [compareResolved, setCompareResolved] = useState<ResolveResponse | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const requestId = useRef(0);
+  // Mirror activeBook into a ref so the (book-independent) SSE subscription can
+  // read the current book without re-subscribing on every switch.
+  const activeBookRef = useRef<string | null>(null);
+  activeBookRef.current = activeBook;
 
-  const loadAnnotations = useCallback(async () => {
+  const loadBooks = useCallback(async () => {
     try {
-      const { annotations: next } = await api.annotations();
+      const { books: next } = await api.books();
+      setBooks(next);
+      return next;
+    } catch {
+      setBooks([]);
+      return [];
+    }
+  }, []);
+
+  const loadAnnotations = useCallback(async (which: string | null) => {
+    try {
+      const { annotations: next } = await api.annotations(which);
       setAnnotations(next);
     } catch {
       setAnnotations([]);
     }
   }, []);
 
-  const loadBook = useCallback(async () => {
+  const loadBook = useCallback(async (which: string | null) => {
     try {
-      const next = await api.book();
+      const next = await api.book(which);
       setBook(next);
       setError(null);
       return next;
@@ -80,25 +98,54 @@ export function App() {
     }
   }, []);
 
-  // Initial load + pick the first composition's Default variant.
+  // Discover the workspace's books, then activate the first one.
   useEffect(() => {
-    void loadBook().then((next) => {
-      const first = next?.compositions[0];
-      if (first !== undefined) {
-        setSelection({ kind: "variant", composition: first.name, variant: DEFAULT_VARIANT.name });
-        setContext({});
-      }
+    void loadBooks().then((list) => {
+      setActiveBook((current) => current ?? list[0]?.name ?? null);
     });
-    void loadAnnotations();
-  }, [loadBook, loadAnnotations]);
+  }, [loadBooks]);
 
-  // Hot-reload: refetch the book on folder changes. The new book object is a
-  // fresh reference, so the resolve/used-in effects below re-run automatically.
+  // Load the active book's tree + annotations and reset the selection to its
+  // first composition. Re-runs on every book switch (a fresh menu each time).
+  useEffect(() => {
+    if (activeBook === null) {
+      setBook(null);
+      setSelection(null);
+      return;
+    }
+    void loadBook(activeBook).then((next) => {
+      const first = next?.compositions[0];
+      setSelection(
+        first !== undefined
+          ? { kind: "variant", composition: first.name, variant: DEFAULT_VARIANT.name }
+          : null,
+      );
+      setContext({});
+      setCompareVariant("");
+    });
+    void loadAnnotations(activeBook);
+  }, [activeBook, loadBook, loadAnnotations]);
+
+  // Hot-reload: refetch the book list, and the active book's tree when it (or
+  // an unknown path) changed. The new book object is a fresh reference, so the
+  // resolve/used-in effects below re-run automatically; the selection persists.
   useEffect(() => {
     const source = new EventSource("/api/events");
-    source.addEventListener("reload", () => void loadBook());
+    source.addEventListener("reload", (event) => {
+      let changed: string | undefined;
+      try {
+        changed = (JSON.parse((event as MessageEvent).data) as { book?: string }).book;
+      } catch {
+        changed = undefined;
+      }
+      void loadBooks();
+      const active = activeBookRef.current;
+      if (active !== null && (changed === undefined || changed === active)) {
+        void loadBook(active);
+      }
+    });
     return () => source.close();
-  }, [loadBook]);
+  }, [loadBook, loadBooks]);
 
   const compositions = book?.compositions ?? [];
   const selectedComposition =
@@ -113,7 +160,10 @@ export function App() {
     requestId.current += 1;
     const id = requestId.current;
     const { composition } = selection;
-    void Promise.all([api.resolve(composition, context), api.lint(composition, context)])
+    void Promise.all([
+      api.resolve(activeBook, composition, context),
+      api.lint(activeBook, composition, context),
+    ])
       .then(([r, l]) => {
         if (requestId.current === id) {
           setResolved(r);
@@ -126,7 +176,7 @@ export function App() {
           setError((e as Error).message);
         }
       });
-  }, [book, selection, context]);
+  }, [book, selection, context, activeBook]);
 
   useEffect(() => {
     if (book === null || selection?.kind !== "fragment") {
@@ -134,10 +184,10 @@ export function App() {
       return;
     }
     void api
-      .usedIn(selection.id)
+      .usedIn(activeBook, selection.id)
       .then(setUsedIn)
       .catch(() => setUsedIn(null));
-  }, [book, selection]);
+  }, [book, selection, activeBook]);
 
   // Resolve the comparison variant for the Diff panel.
   useEffect(() => {
@@ -147,10 +197,14 @@ export function App() {
     }
     const ctx = variantContext(selectedComposition, compareVariant);
     void api
-      .resolve(selection.composition, ctx)
+      .resolve(activeBook, selection.composition, ctx)
       .then(setCompareResolved)
       .catch(() => setCompareResolved(null));
-  }, [selection, compareVariant, selectedComposition]);
+  }, [selection, compareVariant, selectedComposition, activeBook]);
+
+  const selectBook = useCallback((name: string) => {
+    setActiveBook(name);
+  }, []);
 
   const selectVariant = useCallback(
     (composition: string, variant: string) => {
@@ -175,18 +229,24 @@ export function App() {
       if (selection?.kind !== "variant") {
         return;
       }
-      await api.annotate({ prompt: selection.composition, context, fragmentId, anchorText, comment });
-      await loadAnnotations();
+      await api.annotate(activeBook, {
+        prompt: selection.composition,
+        context,
+        fragmentId,
+        anchorText,
+        comment,
+      });
+      await loadAnnotations(activeBook);
     },
-    [selection, context, loadAnnotations],
+    [selection, context, activeBook, loadAnnotations],
   );
 
   const resolveAnnotation = useCallback(
     async (id: string) => {
-      await api.resolveAnnotation(id);
-      await loadAnnotations();
+      await api.resolveAnnotation(activeBook, id);
+      await loadAnnotations(activeBook);
     },
-    [loadAnnotations],
+    [activeBook, loadAnnotations],
   );
 
   // Annotations belonging to exactly the variant on screen (composition + context).
@@ -211,6 +271,9 @@ export function App() {
   return (
     <div className="layout">
       <Sidebar
+        books={books}
+        activeBook={activeBook}
+        onSelectBook={selectBook}
         tree={tree}
         fragmentGroups={fragmentGroups}
         selection={selection}

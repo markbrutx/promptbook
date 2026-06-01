@@ -1,0 +1,8 @@
+name: table
+description: Builder-rendered digest table.
+samples:
+  - label: short
+    output: |
+      | metric | value |
+      | ------ | ----- |
+      | items  | 2     |

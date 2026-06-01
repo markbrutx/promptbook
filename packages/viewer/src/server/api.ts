@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Context } from "@markbrutx/promptbook-core";
 import type { AnnotateRequest, ResolveRequest } from "../shared/types.js";
-import { type AnnotateInput, createAnnotationStore } from "./annotations.js";
-import type { BookSource } from "./book-source.js";
+import { type AnnotateInput, type AnnotationStore, createAnnotationStore } from "./annotations.js";
+import type { ResolvedBook, WorkspaceSource } from "./book-source.js";
 import {
   buildBookResponse,
   buildLintResponse,
@@ -12,8 +12,7 @@ import {
 import { serveStatic } from "./static.js";
 
 export interface RequestHandlerOptions {
-  source: BookSource;
-  promptsDir: string;
+  workspace: WorkspaceSource;
   /** Directory of the built web bundle (dist/web). */
   webRoot: string;
 }
@@ -21,8 +20,8 @@ export interface RequestHandlerOptions {
 /** A request handler plus the hook the folder watcher uses to push reloads. */
 export interface RequestHandler {
   handle(req: IncomingMessage, res: ServerResponse): void;
-  /** Invalidate the cached book and notify connected clients to refetch. */
-  notifyReload(): void;
+  /** Invalidate a changed book (or all) and notify clients to refetch. */
+  notifyReload(book?: string): void;
 }
 
 function sendJson(res: ServerResponse, status: number, payload: unknown): void {
@@ -80,48 +79,87 @@ function asAnnotateRequest(body: unknown): AnnotateInput {
   return input;
 }
 
+const EMPTY_BOOK = { compositions: [], codePrompts: [], fragments: [], warnings: [] } as const;
+
 export function createRequestHandler(options: RequestHandlerOptions): RequestHandler {
-  const { source, promptsDir, webRoot } = options;
+  const { workspace, webRoot } = options;
   const sseClients = new Set<ServerResponse>();
-  const annotations = createAnnotationStore(promptsDir);
+  const annotationStores = new Map<string, AnnotationStore>();
+
+  /** Per-book annotation queue, keyed by directory; bookless roots write at root. */
+  const annotationsFor = async (bookName: string | undefined): Promise<AnnotationStore> => {
+    const resolved = await workspace.resolve(bookName);
+    const dir = resolved?.book.dir ?? workspace.root;
+    let store = annotationStores.get(dir);
+    if (store === undefined) {
+      store = createAnnotationStore(dir);
+      annotationStores.set(dir, store);
+    }
+    return store;
+  };
+
+  /** Resolve the active book or throw a 400-worthy error when the workspace is empty. */
+  const requireBook = async (bookName: string | undefined): Promise<ResolvedBook> => {
+    const resolved = await workspace.resolve(bookName);
+    if (resolved === undefined) {
+      throw new Error("no book found in the workspace");
+    }
+    return resolved;
+  };
 
   const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     const url = new URL(req.url ?? "/", "http://localhost");
     const path = url.pathname;
     const method = req.method ?? "GET";
+    const bookName = url.searchParams.get("book") ?? undefined;
 
     try {
+      if (path === "/api/books" && method === "GET") {
+        sendJson(res, 200, { books: await workspace.books() });
+        return;
+      }
       if (path === "/api/book" && method === "GET") {
-        sendJson(res, 200, buildBookResponse(await source.get(), promptsDir));
+        const resolved = await workspace.resolve(bookName);
+        if (resolved === undefined) {
+          sendJson(res, 200, EMPTY_BOOK);
+          return;
+        }
+        sendJson(res, 200, buildBookResponse(resolved.folder, resolved.book.dir));
         return;
       }
       if (path === "/api/resolve" && method === "POST") {
         const { prompt, context } = asResolveRequest(await readJsonBody(req));
-        sendJson(res, 200, buildResolveResponse(await source.get(), prompt, context));
+        const { folder } = await requireBook(bookName);
+        sendJson(res, 200, buildResolveResponse(folder, prompt, context));
         return;
       }
       if (path === "/api/lint" && method === "POST") {
         const { prompt, context } = asResolveRequest(await readJsonBody(req));
-        sendJson(res, 200, buildLintResponse(await source.get(), prompt, context));
+        const { folder } = await requireBook(bookName);
+        sendJson(res, 200, buildLintResponse(folder, prompt, context));
         return;
       }
       if (path.startsWith("/api/used-in/") && method === "GET") {
         const id = decodeURIComponent(path.slice("/api/used-in/".length));
-        sendJson(res, 200, buildUsedInResponse(await source.get(), id));
+        const { folder } = await requireBook(bookName);
+        sendJson(res, 200, buildUsedInResponse(folder, id));
         return;
       }
       if (path === "/api/annotate" && method === "POST") {
-        const annotation = await annotations.append(asAnnotateRequest(await readJsonBody(req)));
+        const store = await annotationsFor(bookName);
+        const annotation = await store.append(asAnnotateRequest(await readJsonBody(req)));
         sendJson(res, 200, annotation);
         return;
       }
       if (path === "/api/annotations" && method === "GET") {
-        sendJson(res, 200, { annotations: await annotations.list() });
+        const store = await annotationsFor(bookName);
+        sendJson(res, 200, { annotations: await store.list() });
         return;
       }
       if (path.startsWith("/api/annotations/") && method === "DELETE") {
         const id = decodeURIComponent(path.slice("/api/annotations/".length));
-        const removed = await annotations.remove(id);
+        const store = await annotationsFor(bookName);
+        const removed = await store.remove(id);
         sendJson(res, removed ? 200 : 404, { id, removed });
         return;
       }
@@ -154,10 +192,11 @@ export function createRequestHandler(options: RequestHandlerOptions): RequestHan
     handle(req, res) {
       void handle(req, res);
     },
-    notifyReload() {
-      source.invalidate();
+    notifyReload(book) {
+      workspace.invalidate(book);
+      const data = book !== undefined ? JSON.stringify({ book }) : "{}";
       for (const client of sseClients) {
-        client.write("event: reload\ndata: {}\n\n");
+        client.write(`event: reload\ndata: ${data}\n\n`);
       }
     },
   };

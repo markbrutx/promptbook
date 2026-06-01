@@ -6,6 +6,7 @@ export type {
   Annotation,
   AnnotationsResponse,
   BookResponse,
+  BooksResponse,
   CodePromptSummary,
   CompositionSummary,
   FragmentSummary,
@@ -14,4 +15,5 @@ export type {
   Segment,
   UsedInResponse,
   VariantSummary,
+  WorkspaceBook,
 } from "../shared/types.js";

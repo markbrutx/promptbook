@@ -20,6 +20,8 @@ export interface ParsedArgs {
   contextFile?: string;
   fragments: boolean;
   compositions: boolean;
+  /** ls/resolve: operate across every book in the workspace. */
+  all: boolean;
   /** lint: estimated token ceiling for the token-budget rule. */
   maxTokens?: number;
   /** lint: treat warnings as failures for the exit code. */
@@ -88,6 +90,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
       "context-file": { type: "string" },
       fragments: { type: "boolean" },
       compositions: { type: "boolean" },
+      all: { type: "boolean" },
       "max-tokens": { type: "string" },
       strict: { type: "boolean" },
       model: { type: "string" },
@@ -133,6 +136,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     contextFile: values["context-file"],
     fragments: values.fragments ?? false,
     compositions: values.compositions ?? false,
+    all: values.all ?? false,
     maxTokens,
     strict: values.strict ?? false,
     model: values.model,

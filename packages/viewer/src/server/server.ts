@@ -1,13 +1,14 @@
 import { spawn } from "node:child_process";
 import { type FSWatcher, watch } from "node:fs";
 import { createServer } from "node:http";
+import { sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { FsAdapter } from "@markbrutx/promptbook-core";
 import { createRequestHandler } from "./api.js";
-import { createBookSource } from "./book-source.js";
+import { createWorkspaceSource } from "./book-source.js";
 
 export interface ViewerOptions {
-  /** Folder containing `fragments/`, `rules/` and optional `fixtures/`. */
+  /** Workspace root (a single book, or a folder of sibling books). */
   promptsDir: string;
   /** Port to listen on; 0 (default) picks a free port. */
   port?: number;
@@ -41,15 +42,27 @@ function openBrowser(url: string): void {
   }
 }
 
-/** Watch the prompts folder and call `onChange` (debounced) on any edit. */
-function watchFolder(promptsDir: string, onChange: () => void): FSWatcher | undefined {
+/**
+ * Watch the workspace root and call `onChange` (debounced) with the changed
+ * book. A change path's first segment names its top-level book; when several
+ * books or unknown paths change in one window, `undefined` is passed so the
+ * client refetches the active book regardless.
+ */
+function watchFolder(rootDir: string, onChange: (book: string | undefined) => void): FSWatcher | undefined {
   try {
     let timer: NodeJS.Timeout | undefined;
-    const watcher = watch(promptsDir, { recursive: true }, () => {
+    let changed = new Set<string | undefined>();
+    const watcher = watch(rootDir, { recursive: true }, (_event, filename) => {
+      const name = typeof filename === "string" && filename.length > 0 ? filename : undefined;
+      changed.add(name === undefined ? undefined : name.split(sep)[0]);
       if (timer !== undefined) {
         clearTimeout(timer);
       }
-      timer = setTimeout(onChange, 50);
+      timer = setTimeout(() => {
+        const books = [...changed];
+        changed = new Set();
+        onChange(books.length === 1 ? books[0] : undefined);
+      }, 50);
     });
     watcher.on("error", () => {});
     return watcher;
@@ -66,8 +79,8 @@ function watchFolder(promptsDir: string, onChange: () => void): FSWatcher | unde
 export async function startViewer(options: ViewerOptions): Promise<Viewer> {
   const { promptsDir, port = 0, open = false, fs } = options;
   const webRoot = fileURLToPath(new URL("../web", import.meta.url));
-  const source = createBookSource(promptsDir, fs);
-  const handler = createRequestHandler({ source, promptsDir, webRoot });
+  const workspace = createWorkspaceSource(promptsDir, fs);
+  const handler = createRequestHandler({ workspace, webRoot });
 
   const server = createServer((req, res) => handler.handle(req, res));
   await new Promise<void>((resolve, reject) => {
@@ -79,7 +92,7 @@ export async function startViewer(options: ViewerOptions): Promise<Viewer> {
   const boundPort = typeof address === "object" && address !== null ? address.port : port;
   const url = `http://localhost:${boundPort}`;
 
-  const watcher = watchFolder(promptsDir, () => handler.notifyReload());
+  const watcher = watchFolder(promptsDir, (book) => handler.notifyReload(book));
 
   if (open) {
     openBrowser(url);

@@ -1,7 +1,5 @@
 import type { Context } from "./types.js";
-
-/** Matches `${path}` placeholders, capturing an optional leading `\` escape. */
-const VAR_RE = /(\\?)\$\{([^}]+)\}/g;
+import { VAR_RE } from "./vars.js";
 
 /**
  * Substitute `${path}` placeholders in `body` using `context`.

@@ -3,6 +3,7 @@ import type {
   Annotation,
   AnnotationsResponse,
   BookResponse,
+  BooksResponse,
   Context,
   LintResponse,
   ResolveResponse,
@@ -30,15 +31,30 @@ async function sendJson<T>(method: "POST" | "DELETE", path: string, body?: unkno
   return (await res.json()) as T;
 }
 
+/** Append `?book=<name>` so a request targets the active book in the workspace. */
+function scoped(path: string, book: string | null): string {
+  if (book === null || book === "") {
+    return path;
+  }
+  const sep = path.includes("?") ? "&" : "?";
+  return `${path}${sep}book=${encodeURIComponent(book)}`;
+}
+
 export const api = {
-  book: () => getJson<BookResponse>("/api/book"),
-  resolve: (prompt: string, context: Context) =>
-    sendJson<ResolveResponse>("POST", "/api/resolve", { prompt, context }),
-  lint: (prompt: string, context: Context) =>
-    sendJson<LintResponse>("POST", "/api/lint", { prompt, context }),
-  usedIn: (fragmentId: string) => getJson<UsedInResponse>(`/api/used-in/${encodeURIComponent(fragmentId)}`),
-  annotations: () => getJson<AnnotationsResponse>("/api/annotations"),
-  annotate: (body: AnnotateRequest) => sendJson<Annotation>("POST", "/api/annotate", body),
-  resolveAnnotation: (id: string) =>
-    sendJson<{ id: string; removed: boolean }>("DELETE", `/api/annotations/${encodeURIComponent(id)}`),
+  books: () => getJson<BooksResponse>("/api/books"),
+  book: (book: string | null) => getJson<BookResponse>(scoped("/api/book", book)),
+  resolve: (book: string | null, prompt: string, context: Context) =>
+    sendJson<ResolveResponse>("POST", scoped("/api/resolve", book), { prompt, context }),
+  lint: (book: string | null, prompt: string, context: Context) =>
+    sendJson<LintResponse>("POST", scoped("/api/lint", book), { prompt, context }),
+  usedIn: (book: string | null, fragmentId: string) =>
+    getJson<UsedInResponse>(scoped(`/api/used-in/${encodeURIComponent(fragmentId)}`, book)),
+  annotations: (book: string | null) => getJson<AnnotationsResponse>(scoped("/api/annotations", book)),
+  annotate: (book: string | null, body: AnnotateRequest) =>
+    sendJson<Annotation>("POST", scoped("/api/annotate", book), body),
+  resolveAnnotation: (book: string | null, id: string) =>
+    sendJson<{ id: string; removed: boolean }>(
+      "DELETE",
+      scoped(`/api/annotations/${encodeURIComponent(id)}`, book),
+    ),
 };

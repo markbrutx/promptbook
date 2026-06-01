@@ -15,6 +15,7 @@ function viewArgs(overrides: Partial<ParsedArgs> = {}): ParsedArgs {
     ctx: [],
     fragments: false,
     compositions: false,
+    all: false,
     strict: false,
     lint: false,
     noOpen: false,

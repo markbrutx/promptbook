@@ -2,14 +2,47 @@ import type { ReactNode } from "react";
 import { fragmentAccent } from "../colors.js";
 import type { Selection } from "../selection.js";
 import type { CompositionTreeNode, FragmentGroup, GroupNode } from "../tree.js";
+import type { WorkspaceBook } from "../types.js";
 
 interface SidebarProps {
+  books: WorkspaceBook[];
+  activeBook: string | null;
+  onSelectBook: (name: string) => void;
   tree: CompositionTreeNode[];
   fragmentGroups: FragmentGroup[];
   selection: Selection | null;
   onSelectVariant: (composition: string, variant: string) => void;
   onSelectCode: (name: string, sample: string) => void;
   onSelectFragment: (id: string) => void;
+}
+
+/** Brand header + (when the workspace holds more than one book) a book switcher. */
+function BookSwitcher({
+  books,
+  activeBook,
+  onSelectBook,
+}: {
+  books: WorkspaceBook[];
+  activeBook: string | null;
+  onSelectBook: (name: string) => void;
+}) {
+  return (
+    <header className="sidebar-brand">
+      <img className="sidebar-logo" src="/promptbook-logo.png" alt="promptbook" />
+      {books.length > 1 ? (
+        <label className="book-switcher">
+          <span className="book-switcher-label">Book</span>
+          <select value={activeBook ?? ""} onChange={(event) => onSelectBook(event.target.value)}>
+            {books.map((b) => (
+              <option key={b.name} value={b.name}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+    </header>
+  );
 }
 
 function isVariantSelected(selection: Selection | null, composition: string, variant: string): boolean {
@@ -129,6 +162,9 @@ function GroupItem({
 }
 
 export function Sidebar({
+  books,
+  activeBook,
+  onSelectBook,
   tree,
   fragmentGroups,
   selection,
@@ -139,6 +175,7 @@ export function Sidebar({
   const handlers: NodeHandlers = { onSelectVariant, onSelectCode };
   return (
     <nav className="sidebar">
+      <BookSwitcher books={books} activeBook={activeBook} onSelectBook={onSelectBook} />
       <section>
         <h2 className="sidebar-title">Compositions</h2>
         {tree.length === 0 ? (

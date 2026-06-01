@@ -1,0 +1,8 @@
+name: greeting
+base:
+  - hello
+rules:
+  - when:
+      tone: formal
+    replace:
+      hello: formal
