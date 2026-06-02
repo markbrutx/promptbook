@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildContext,
   coerceScalar,
+  loadConfig,
   loadLintConfig,
   parseCtxPairs,
   resolvePromptsDir,
@@ -80,6 +81,62 @@ describe("resolvePromptsDir", () => {
   it("falls back to ./prompts when neither is present", async () => {
     const io = ioWith({});
     expect(await resolvePromptsDir(io)).toBe("/work/prompts");
+  });
+
+  it("resolves promptsDir relative to where the config was found, not cwd", async () => {
+    // promptbook.json sits at /repo; the user invokes promptbook from /repo/packages/foo.
+    // The result must be the same as if they had run it from /repo.
+    const io = ioWith(
+      { "/repo/promptbook.json": JSON.stringify({ promptsDir: "./supabase/prompts" }) },
+      "/repo/packages/foo",
+    );
+    expect(await resolvePromptsDir(io)).toBe("/repo/supabase/prompts");
+  });
+
+  it("--dir still resolves relative to cwd even when config lives elsewhere", async () => {
+    const io = ioWith(
+      { "/repo/promptbook.json": JSON.stringify({ promptsDir: "./elsewhere" }) },
+      "/repo/packages/foo",
+    );
+    expect(await resolvePromptsDir(io, "./local-flag")).toBe("/repo/packages/foo/local-flag");
+  });
+});
+
+describe("loadConfig walk-up", () => {
+  it("finds promptbook.json in the current directory", async () => {
+    const io = ioWith({ "/work/promptbook.json": JSON.stringify({ promptsDir: "./p" }) });
+    const loaded = await loadConfig(io);
+    expect(loaded.dir).toBe("/work");
+    expect(loaded.data).toEqual({ promptsDir: "./p" });
+  });
+
+  it("walks up to find promptbook.json in an ancestor", async () => {
+    const io = ioWith(
+      { "/repo/promptbook.json": JSON.stringify({ promptsDir: "./prompts" }) },
+      "/repo/packages/foo/src",
+    );
+    const loaded = await loadConfig(io);
+    expect(loaded.dir).toBe("/repo");
+  });
+
+  it("prefers the nearest config when several exist on the path", async () => {
+    const io = ioWith(
+      {
+        "/repo/promptbook.json": JSON.stringify({ promptsDir: "./outer" }),
+        "/repo/packages/foo/promptbook.json": JSON.stringify({ promptsDir: "./inner" }),
+      },
+      "/repo/packages/foo/src",
+    );
+    const loaded = await loadConfig(io);
+    expect(loaded.dir).toBe("/repo/packages/foo");
+    expect(loaded.data.promptsDir).toBe("./inner");
+  });
+
+  it("returns an empty config with no dir when nothing matches up the tree", async () => {
+    const io = ioWith({}, "/some/where");
+    const loaded = await loadConfig(io);
+    expect(loaded.data).toEqual({});
+    expect(loaded.dir).toBeUndefined();
   });
 });
 

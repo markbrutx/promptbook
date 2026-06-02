@@ -1,4 +1,4 @@
-import { resolve as resolvePath } from "node:path";
+import { dirname, resolve as resolvePath } from "node:path";
 import type { Context, ContextValue } from "@markbrutx/promptbook-core";
 import type { IO } from "./io.js";
 
@@ -90,6 +90,14 @@ interface PromptbookConfig {
   eval?: unknown;
 }
 
+/** A loaded `promptbook.json`: parsed data plus the directory that held it. */
+export interface LoadedConfig {
+  /** Parsed JSON object (or `{}` when no file was found or parsing failed). */
+  data: PromptbookConfig;
+  /** Absolute directory where the config was found; `undefined` if nothing matched up the tree. */
+  dir?: string;
+}
+
 /** lint options sourced from the `lint` section of `promptbook.json`. */
 export interface LintConfig {
   maxTokens?: number;
@@ -97,30 +105,45 @@ export interface LintConfig {
 }
 
 /**
- * Read and parse `promptbook.json` from cwd once. Missing, unreadable or
- * malformed config yields an empty object, so callers treat it as best-effort
- * and layer flags on top. Pass the result to {@link resolvePromptsDir} and
- * {@link lintConfigFrom} to avoid re-reading the file per command.
+ * Walk up from `io.cwd()` to find the first `promptbook.json`, parse it, and
+ * return its data + the directory it lived in. Walking up (rather than only
+ * checking cwd) is what makes `promptbook` work like `git`/`biome`/`eslint`:
+ * one config at the repo root reaches every subfolder. Path-valued keys
+ * (currently just `promptsDir`) are resolved relative to {@link LoadedConfig.dir}
+ * by {@link resolvePromptsDir}, not relative to wherever the shell happens to
+ * be — so `pnpm exec` snapping cwd to a workspace package cannot break the
+ * lookup. Missing, unreadable or malformed files yield an empty config
+ * (best-effort), so callers can layer flags on top.
  */
-export async function loadConfig(io: IO): Promise<PromptbookConfig> {
-  const configPath = resolvePath(io.cwd(), "promptbook.json");
-  let raw: string;
-  try {
-    raw = await io.fs.readFile(configPath);
-  } catch {
-    return {};
-  }
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    return isJsonObject(parsed) ? parsed : {};
-  } catch {
-    return {};
+export async function loadConfig(io: IO): Promise<LoadedConfig> {
+  let dir = resolvePath(io.cwd());
+  for (;;) {
+    const configPath = resolvePath(dir, "promptbook.json");
+    let raw: string | undefined;
+    try {
+      raw = await io.fs.readFile(configPath);
+    } catch {
+      // not found at this level; try the parent
+    }
+    if (raw !== undefined) {
+      try {
+        const parsed = JSON.parse(raw) as unknown;
+        return { data: isJsonObject(parsed) ? parsed : {}, dir };
+      } catch {
+        return { data: {}, dir };
+      }
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      return { data: {} };
+    }
+    dir = parent;
   }
 }
 
 /** Extract the `lint` section from an already-loaded config. */
-export function lintConfigFrom(config: PromptbookConfig): LintConfig {
-  const section = config.lint;
+export function lintConfigFrom(loaded: LoadedConfig): LintConfig {
+  const section = loaded.data.lint;
   if (!isJsonObject(section)) {
     return {};
   }
@@ -146,8 +169,8 @@ export interface EvalConfig {
 }
 
 /** Extract the `eval` section from an already-loaded config. */
-export function evalConfigFrom(config: PromptbookConfig): EvalConfig {
-  const section = config.eval;
+export function evalConfigFrom(loaded: LoadedConfig): EvalConfig {
+  const section = loaded.data.eval;
   if (!isJsonObject(section)) {
     return {};
   }
@@ -162,21 +185,22 @@ export function evalConfigFrom(config: PromptbookConfig): EvalConfig {
 }
 
 /**
- * Resolve the prompts folder by priority: `--dir` flag > `promptbook.json`
- * (`promptsDir` key) in cwd > `./prompts`. All results are absolute. Pass a
- * preloaded `config` to reuse a single read; otherwise it is loaded here.
+ * Resolve the prompts folder by priority:
+ *   1. `--dir <path>` — relative to **cwd** (explicit per-invocation override).
+ *   2. `promptbook.json` `promptsDir` — relative to **the config file's directory**
+ *      (so the value can stay stable while the user shells around in subfolders).
+ *   3. `./prompts` — relative to cwd (back-compat default when no config exists).
+ *
+ * All results are absolute. Pass a preloaded {@link LoadedConfig} to reuse a
+ * single read; otherwise it is loaded here.
  */
-export async function resolvePromptsDir(
-  io: IO,
-  dirFlag?: string,
-  config?: PromptbookConfig,
-): Promise<string> {
+export async function resolvePromptsDir(io: IO, dirFlag?: string, loaded?: LoadedConfig): Promise<string> {
   if (dirFlag !== undefined) {
     return resolvePath(io.cwd(), dirFlag);
   }
-  const resolved = config ?? (await loadConfig(io));
-  if (typeof resolved.promptsDir === "string") {
-    return resolvePath(io.cwd(), resolved.promptsDir);
+  const resolved = loaded ?? (await loadConfig(io));
+  if (typeof resolved.data.promptsDir === "string" && resolved.dir !== undefined) {
+    return resolvePath(resolved.dir, resolved.data.promptsDir);
   }
   return resolvePath(io.cwd(), "prompts");
 }
@@ -198,9 +222,9 @@ async function dirExists(io: IO, dir: string): Promise<boolean> {
 export async function requirePromptsDir(
   io: IO,
   dirFlag?: string,
-  config?: PromptbookConfig,
+  loaded?: LoadedConfig,
 ): Promise<string | null> {
-  const promptsDir = await resolvePromptsDir(io, dirFlag, config);
+  const promptsDir = await resolvePromptsDir(io, dirFlag, loaded);
   if (!(await dirExists(io, promptsDir))) {
     io.stderr(`error: prompts folder not found: ${promptsDir}\n`);
     return null;

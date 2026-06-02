@@ -1,6 +1,6 @@
 {
   "name": "@markbrutx/promptbook-cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Thin terminal surface over @markbrutx/promptbook-core: resolve and ls for agents and CI.",
   "type": "module",
   "license": "MIT",
@@ -48,11 +48,11 @@
     "check": "biome check ."
   },
   "dependencies": {
-    "@markbrutx/promptbook-core": "^0.2.0",
-    "@markbrutx/promptbook-openrouter": "^0.2.0"
+    "@markbrutx/promptbook-core": "^0.3.0",
+    "@markbrutx/promptbook-openrouter": "^0.3.0"
   },
   "optionalDependencies": {
-    "@markbrutx/promptbook-viewer": "^0.2.0"
+    "@markbrutx/promptbook-viewer": "^0.3.0"
   },
   "devDependencies": {
     "@biomejs/biome": "latest",

@@ -19,8 +19,11 @@ promptbook view                         # open the viewer (needs @markbrutx/prom
 promptbook annotations list|resolve|clear
 ```
 
-The prompts folder is resolved from `--dir`, then `promptbook.json`, then
-`./prompts`.
+The prompts folder is resolved from `--dir`, then `promptbook.json` (the
+nearest one found by walking up from the current directory — same model as
+`git`/`biome`/`eslint`; the `promptsDir` value is taken relative to wherever
+the config file lives, so one config at the repo root works from every
+subfolder), then `./prompts`.
 
 ```
 promptbook resolve assistant --ctx mode=terse --ctx locale=ru
