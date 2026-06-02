@@ -21,9 +21,6 @@ tmp/
 
 # internal, local-only docs
 CLAUDE.md
-VISION.md
-ROADMAP.md
-goals/
 codemaps/
 .reports/
 wb
