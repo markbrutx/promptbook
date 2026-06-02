@@ -1,0 +1,14 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "introduction",
+    "concepts",
+    "fragments",
+    "rules",
+    "resolve-and-trace",
+    "cli",
+    "viewer",
+    "examples"
+  ]
+}

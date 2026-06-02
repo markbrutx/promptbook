@@ -1,0 +1,15 @@
+{
+  "name": "sponsor-vip-kid-safe",
+  "prompt": "sponsor-mention",
+  "context": {
+    "sport": "football",
+    "locale": "English",
+    "tier": "vip",
+    "platform": "broadcast-tv",
+    "model": "open-source",
+    "compliance": "kid-safe",
+    "sponsor": "the official broadcast partner"
+  },
+  "input": "Free-kick from 22 metres curls into the top corner to make it 1-0.",
+  "assert": []
+}

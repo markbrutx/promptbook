@@ -1,0 +1,14 @@
+{
+  "name": "push-tennis-portuguese",
+  "prompt": "push-headline",
+  "context": {
+    "sport": "tennis",
+    "locale": "Portuguese",
+    "tier": "free",
+    "platform": "mobile-app",
+    "model": "open-source",
+    "compliance": "standard"
+  },
+  "input": "Top seed drops the opening set 6-7 on a tiebreak.",
+  "assert": []
+}

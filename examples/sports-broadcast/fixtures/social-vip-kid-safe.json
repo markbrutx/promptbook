@@ -1,0 +1,14 @@
+{
+  "name": "social-vip-kid-safe",
+  "prompt": "social-post",
+  "context": {
+    "sport": "basketball",
+    "locale": "English",
+    "tier": "vip",
+    "platform": "social",
+    "model": "open-source",
+    "compliance": "kid-safe"
+  },
+  "input": "Late three-pointer ties the game with under two seconds on the clock.",
+  "assert": []
+}

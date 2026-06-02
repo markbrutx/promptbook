@@ -1,0 +1,81 @@
+---
+title: Rules
+description: when / add / replace / forbid / order, declaration order, and the last-wins + forbid-final cascade.
+---
+
+A composition has a `name`, a `base` list of fragment ids, and a `rules` list. Each rule has a `when` clause and exactly one action.
+
+## Rule shape
+
+```yaml
+- when: { tone: terse }      # equality conditions on context, empty = always fires
+  replace: { from-id: to-id } # exactly one of: replace, add, forbid, order
+```
+
+Empty `when:` (or no `when:`) always fires. Multiple keys on `when:` are ANDed.
+
+## The four actions
+
+### `replace` · swap one id for another
+
+```yaml
+- when: { tone: terse }
+  replace: { reply-tone-warm: reply-tone-terse }
+```
+
+The base list has `reply-tone-warm`; when `tone === "terse"`, it becomes `reply-tone-terse`.
+
+### `add` · insert one or more ids, optionally after an anchor
+
+```yaml
+- when: { tier: vip }
+  add: [sponsor-mention]
+  after: tier-vip
+```
+
+Without `after:`, the addition goes just before the last existing id (so trailing format / footer fragments stay last).
+
+### `forbid` · remove ids from the final result
+
+```yaml
+- when: { compliance: kid-safe }
+  forbid: [sponsor-mention]
+```
+
+`forbid` is the **final filter** in the cascade. Even if an earlier rule added the id, `forbid` still drops it from the output.
+
+### `order` · explicit final order override
+
+```yaml
+- when: {}
+  order: [persona, guardrails, task, format, locale]
+```
+
+Listed ids that are present in the working list come first, in the listed order. Remaining ids keep their relative order. Duplicates collapse.
+
+## The cascade
+
+Rules apply in declaration order. Later rules win. `forbid` always wins over `add` even if it appears _earlier_ in the list:
+
+```yaml title="examples/sports-broadcast/rules/social-post.yaml"
+- when: { tier: vip }
+  add: [sponsor-mention]
+  after: tier-vip
+
+- when: { compliance: kid-safe }
+  forbid: [sponsor-mention]
+```
+
+Resolved with `tier=vip, compliance=kid-safe`:
+
+| Step      | Working list after this rule                                        |
+| --------- | ------------------------------------------------------------------- |
+| base      | persona, guardrails, …, tier-free, …, task-social-post, format, locale |
+| tier=vip  | persona, …, tier-vip, **sponsor-mention**, …, task-social-post, …   |
+| kid-safe  | persona, …, tier-vip, …, task-social-post, …  (sponsor-mention dropped) |
+
+The viewer's explain panel shows each rule, whether it fired and why, and the final order. See [Resolve and trace](/docs/resolve-and-trace).
+
+## Never throw on data
+
+If `replace` names a `from` id that is not in the working list, the rule is a no-op and the trace records a warning. If `forbid` names an id that is not present, same thing. If a fragment id is referenced but does not exist on disk, the trace warns and the resolver continues. The engine shows holes; it does not crash.

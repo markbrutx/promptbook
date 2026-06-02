@@ -1,0 +1,37 @@
+---
+title: Introduction
+description: What promptbook is, who it is for, and the problem it solves.
+---
+
+promptbook is a tiny, deterministic library for composing prompts. It splits a system prompt into three boring layers:
+
+- **WHAT** · reusable Markdown _fragments_ with a YAML frontmatter id.
+- **WHEN** · declarative YAML _rules_ that say which fragments apply for which context.
+- **HOW** · `resolve()` returns a `{ text, trace }` pair you then send to a model.
+
+There are no model calls in the core. There is no orchestration, no DSL beyond the small rule shape, and no string-building in code. The intelligence lives in the agent that drafts your fragments and rules; the runtime stays dumb on purpose.
+
+## Who it is for
+
+You need promptbook when one of these starts to bite:
+
+- The same persona / guardrails / format paragraph is copy-pasted across many prompts.
+- You compile the same logical prompt to different output formats for different models (prose for one, JSON for another, XML-tagged for a third).
+- You have a context axis (language, tier, region, compliance regime) and the only place that policy lives is inside string concatenation code, scattered across the codebase.
+- You want a static check that catches "this fragment is dead" or "this rule never fires" before it ships.
+
+## What you get
+
+```bash
+npm install @markbrutx/promptbook-core @markbrutx/promptbook-cli
+```
+
+You write fragments and rules as plain files. The CLI lists them, resolves any composition under any context, lints the book for dead rules and dangling fragments, and runs a local viewer that diffs two variants side by side. The viewer is the same one you can [open here](/demo/sports-broadcast), backed by the deterministic resolver running in the browser.
+
+## The non-goals
+
+- Not an LLM orchestration framework. There is no chain-of-thought helper, no retry loop, no streaming client.
+- Not a config-as-code DSL. Rules have four actions (`add`, `replace`, `forbid`, `order`) and a `when` clause. That is the entire surface.
+- Not opinionated about your model. The target model is just another context axis.
+
+The next page walks the WHAT / WHEN / HOW split with code.

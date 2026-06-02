@@ -3,13 +3,17 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "engines": {
     "node": ">=20.6"
   },
   "scripts": {
-    "build": "npm run build --if-present -w @markbrutx/promptbook-core -w @markbrutx/promptbook-openrouter -w @markbrutx/promptbook-viewer -w @markbrutx/promptbook-cli",
+    "build": "npm run build --if-present -w @markbrutx/promptbook-core -w @markbrutx/promptbook-openrouter -w @markbrutx/promptbook-viewer -w @markbrutx/promptbook-cli -w @markbrutx/promptbook-site",
+    "build:packages": "npm run build --if-present -w @markbrutx/promptbook-core -w @markbrutx/promptbook-openrouter -w @markbrutx/promptbook-viewer -w @markbrutx/promptbook-cli",
+    "build:site": "npm run build -w @markbrutx/promptbook-site",
+    "dev:site": "npm run dev -w @markbrutx/promptbook-site",
     "typecheck": "npm -ws --if-present run typecheck",
     "test": "npm -ws --if-present run test",
     "check": "npm -ws --if-present run check && npm run deadcode",

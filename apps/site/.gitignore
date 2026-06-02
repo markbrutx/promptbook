@@ -1,0 +1,6 @@
+.next/
+.vercel/
+.turbo/
+.source/
+next-env.d.ts
+public/demo/

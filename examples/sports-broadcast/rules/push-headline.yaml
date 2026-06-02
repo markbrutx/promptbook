@@ -1,0 +1,33 @@
+name: push-headline
+base:
+  - persona
+  - guardrails
+  - sport-football
+  - tier-free
+  - platform-mobile-app
+  - compliance-standard
+  - task-push-headline
+  - format-prose
+  - locale
+rules:
+  - when: { sport: basketball }
+    replace: { sport-football: sport-basketball }
+  - when: { sport: tennis }
+    replace: { sport-football: sport-tennis }
+  - when: { sport: motorsport }
+    replace: { sport-football: sport-motorsport }
+
+  - when: { tier: premium }
+    replace: { tier-free: tier-premium }
+  - when: { tier: vip }
+    replace: { tier-free: tier-vip }
+
+  - when: { platform: broadcast-tv }
+    replace: { platform-mobile-app: platform-broadcast-tv }
+  - when: { platform: social }
+    replace: { platform-mobile-app: platform-social }
+
+  - when: { compliance: kid-safe }
+    replace: { compliance-standard: compliance-kid-safe }
+  - when: { compliance: betting-allowed-region }
+    replace: { compliance-standard: compliance-betting }

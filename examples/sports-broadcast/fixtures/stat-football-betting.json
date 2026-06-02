@@ -1,0 +1,14 @@
+{
+  "name": "stat-football-betting",
+  "prompt": "stat-sidebar",
+  "context": {
+    "sport": "football",
+    "locale": "English",
+    "tier": "premium",
+    "platform": "broadcast-tv",
+    "model": "open-source",
+    "compliance": "betting-allowed-region"
+  },
+  "input": "Pre-match win probability: home 48%, draw 27%, away 25%. xG so far: home 1.4, away 0.7. Shots on target: 5-2. Regulator line: 'Bet responsibly. 18+.'",
+  "assert": []
+}

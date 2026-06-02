@@ -11,7 +11,7 @@ import { cmdView } from "./commands/view.js";
 import { cmdWatch } from "./commands/watch.js";
 import { defaultIO, type IO } from "./io.js";
 
-const HELP = `promptbook — compose prompts from reusable fragments
+const HELP = `promptbook · compose prompts from reusable fragments
 
 Usage:
   promptbook <command> [options]

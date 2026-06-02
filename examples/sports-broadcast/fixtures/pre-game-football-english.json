@@ -1,0 +1,16 @@
+{
+  "name": "pre-game-football-english",
+  "prompt": "pre-game-preview",
+  "context": {
+    "sport": "football",
+    "locale": "English",
+    "tier": "premium",
+    "platform": "broadcast-tv",
+    "model": "claude",
+    "compliance": "standard"
+  },
+  "input": "Home side enters on a four-match unbeaten run; visitors arrive with two key absences. Pitch is dry, wind across goal.",
+  "assert": [
+    { "type": "contains", "value": "football" }
+  ]
+}

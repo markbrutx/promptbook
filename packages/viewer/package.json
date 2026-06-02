@@ -25,7 +25,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./web": {
+      "types": "./src/web/mount.tsx",
+      "default": "./src/web/mount.tsx"
+    },
+    "./web/styles.css": "./src/web/styles.css"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

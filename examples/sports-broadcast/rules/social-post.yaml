@@ -1,0 +1,45 @@
+name: social-post
+# This composition is the forbid-wins exhibit. Base has no sponsor mention;
+# tier=vip would add one, but compliance=kid-safe forbids it — and forbid is
+# the final filter in the cascade, so vip+kid-safe still produces a clean post.
+base:
+  - persona
+  - guardrails
+  - sport-football
+  - tier-free
+  - platform-social
+  - compliance-standard
+  - task-social-post
+  - format-prose
+  - locale
+rules:
+  - when: { sport: basketball }
+    replace: { sport-football: sport-basketball }
+  - when: { sport: tennis }
+    replace: { sport-football: sport-tennis }
+  - when: { sport: motorsport }
+    replace: { sport-football: sport-motorsport }
+
+  - when: { tier: premium }
+    replace: { tier-free: tier-premium }
+  - when: { tier: vip }
+    replace: { tier-free: tier-vip }
+
+  - when: { platform: broadcast-tv }
+    replace: { platform-social: platform-broadcast-tv }
+  - when: { platform: mobile-app }
+    replace: { platform-social: platform-mobile-app }
+
+  - when: { compliance: kid-safe }
+    replace: { compliance-standard: compliance-kid-safe }
+  - when: { compliance: betting-allowed-region }
+    replace: { compliance-standard: compliance-betting }
+
+  # vip adds an integrated sponsor block...
+  - when: { tier: vip }
+    add: [sponsor-mention]
+    after: tier-vip
+
+  # ...but kid-safe wins over add: forbid is the final filter.
+  - when: { compliance: kid-safe }
+    forbid: [sponsor-mention]

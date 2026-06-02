@@ -1,0 +1,75 @@
+---
+title: CLI
+description: promptbook ls, resolve, view, lint, eval, bundle, watch, annotations.
+---
+
+import cliHelp from "@/content/cli-help.json";
+
+The CLI ships with the `@markbrutx/promptbook-cli` package. Install it globally or run via `npx`:
+
+```bash
+npm i -g @markbrutx/promptbook-cli
+# or
+npx @markbrutx/promptbook-cli <command>
+```
+
+Run from any folder that contains `promptbook.json`, or pass `--dir <path>` explicitly.
+
+## Streams
+
+- **stdout** = the payload (resolved prompt text, JSON when `--json`).
+- **stderr** = explanations (the `--explain` trace), warnings, errors.
+
+This lets you pipe `promptbook resolve … | curl …` to a model API while still seeing the trace on your terminal. `NO_COLOR` is honored.
+
+## `--help`
+
+The list below is captured from the built CLI itself, so it cannot drift from what ships.
+
+<pre className="rounded-md bg-fd-muted/30 p-4 text-xs whitespace-pre-wrap">{cliHelp.helpText}</pre>
+
+## The headline commands
+
+### `resolve` · assemble one prompt
+
+```bash
+promptbook resolve reply --ctx model=gpt --ctx locale=English
+promptbook resolve reply --ctx model=claude --explain
+```
+
+`--explain` prints the rule trace to stderr.
+
+### `view` · open the local viewer
+
+```bash
+promptbook view --dir examples/sports-broadcast
+```
+
+A web app at `http://localhost:<random-port>` listing every composition, fragment, and code-prompt; pick a context combination to re-assemble live and diff two variants. The [bundled live demo](/demo/sports-broadcast) is the same viewer running entirely in the browser.
+
+### `lint` · static checks, no model
+
+```bash
+promptbook lint
+promptbook lint reply
+```
+
+Without an argument, only book-level rules run (dead rule, unused fragment, dangling reference). With a composition name, resolved-scope rules also run (token budget, banned tokens, language-directive position).
+
+### `eval` · run fixtures through a model adapter
+
+```bash
+promptbook eval gpt-json --model openai/gpt-4o-mini --threshold 1
+```
+
+Requires an adapter package (e.g. `@markbrutx/promptbook-openrouter`). The core itself never makes a model call.
+
+### `bundle` · compile a book to an importable module
+
+```bash
+promptbook bundle examples/sports-broadcast -o book.generated.ts
+promptbook bundle --check    # exit 1 on drift in CI
+promptbook bundle --all      # every book in a multi-book workspace
+```
+
+The runtime then imports `book` and calls `resolveBook(book, prompt, context)`, so no filesystem touches at request time. This is the path the [demo site](/demo/sports-broadcast) takes, with JSON output instead of TS.

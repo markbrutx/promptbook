@@ -8,6 +8,7 @@ export type {
   AnnotationsResponse,
   BookResponse,
   BooksResponse,
+  CodePromptSummary,
   CompositionSummary,
   FragmentSummary,
   LintResponse,

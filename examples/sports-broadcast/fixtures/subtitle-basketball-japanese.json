@@ -1,0 +1,14 @@
+{
+  "name": "subtitle-basketball-japanese",
+  "prompt": "subtitle-blurb",
+  "context": {
+    "sport": "basketball",
+    "locale": "Japanese",
+    "tier": "free",
+    "platform": "broadcast-tv",
+    "model": "open-source",
+    "compliance": "standard"
+  },
+  "input": "Block at the rim, fast break the other way, finishes with a dunk.",
+  "assert": []
+}

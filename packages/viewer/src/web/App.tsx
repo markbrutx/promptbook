@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api } from "./api.js";
+import type { Api } from "./api.js";
 import { Addons } from "./components/Addons.js";
 import { Canvas } from "./components/Canvas.js";
 import { CodePromptView } from "./components/CodePromptView.js";
@@ -47,7 +47,17 @@ function controlKeys(composition: CompositionSummary | undefined): string[] {
   return [...keys];
 }
 
-export function App() {
+/** Props passed to the viewer's root component. */
+export interface AppProps {
+  /** API surface the viewer talks to. The CLI viewer wires the default fetch
+   * implementation; the static demo site supplies an in-browser one. */
+  api: Api;
+  /** Subscribe to hot-reload events. When omitted, no live-reload wiring runs
+   * (e.g. the static-mount path). The unsubscribe callback is returned. */
+  subscribeReload?: (callback: (changedBook: string | undefined) => void) => () => void;
+}
+
+export function App({ api, subscribeReload }: AppProps) {
   const [books, setBooks] = useState<WorkspaceBook[]>([]);
   const [activeBook, setActiveBook] = useState<string | null>(null);
   const [book, setBook] = useState<BookResponse | null>(null);
@@ -75,28 +85,34 @@ export function App() {
       setBooks([]);
       return [];
     }
-  }, []);
+  }, [api.books]);
 
-  const loadAnnotations = useCallback(async (which: string | null) => {
-    try {
-      const { annotations: next } = await api.annotations(which);
-      setAnnotations(next);
-    } catch {
-      setAnnotations([]);
-    }
-  }, []);
+  const loadAnnotations = useCallback(
+    async (which: string | null) => {
+      try {
+        const { annotations: next } = await api.annotations(which);
+        setAnnotations(next);
+      } catch {
+        setAnnotations([]);
+      }
+    },
+    [api.annotations],
+  );
 
-  const loadBook = useCallback(async (which: string | null) => {
-    try {
-      const next = await api.book(which);
-      setBook(next);
-      setError(null);
-      return next;
-    } catch (e) {
-      setError((e as Error).message);
-      return null;
-    }
-  }, []);
+  const loadBook = useCallback(
+    async (which: string | null) => {
+      try {
+        const next = await api.book(which);
+        setBook(next);
+        setError(null);
+        return next;
+      } catch (e) {
+        setError((e as Error).message);
+        return null;
+      }
+    },
+    [api.book],
+  );
 
   // Discover the workspace's books, then activate the first one.
   useEffect(() => {
@@ -127,25 +143,20 @@ export function App() {
   }, [activeBook, loadBook, loadAnnotations]);
 
   // Hot-reload: refetch the book list, and the active book's tree when it (or
-  // an unknown path) changed. The new book object is a fresh reference, so the
-  // resolve/used-in effects below re-run automatically; the selection persists.
+  // an unknown path) changed. The CLI viewer wires this to its SSE stream; the
+  // static demo site omits it entirely (no live reload). The selection persists.
   useEffect(() => {
-    const source = new EventSource("/api/events");
-    source.addEventListener("reload", (event) => {
-      let changed: string | undefined;
-      try {
-        changed = (JSON.parse((event as MessageEvent).data) as { book?: string }).book;
-      } catch {
-        changed = undefined;
-      }
+    if (subscribeReload === undefined) {
+      return;
+    }
+    return subscribeReload((changed) => {
       void loadBooks();
       const active = activeBookRef.current;
       if (active !== null && (changed === undefined || changed === active)) {
         void loadBook(active);
       }
     });
-    return () => source.close();
-  }, [loadBook, loadBooks]);
+  }, [loadBook, loadBooks, subscribeReload]);
 
   const compositions = book?.compositions ?? [];
   const selectedComposition =
@@ -176,7 +187,7 @@ export function App() {
           setError((e as Error).message);
         }
       });
-  }, [book, selection, context, activeBook]);
+  }, [book, selection, context, activeBook, api.lint, api.resolve]);
 
   useEffect(() => {
     if (book === null || selection?.kind !== "fragment") {
@@ -187,7 +198,7 @@ export function App() {
       .usedIn(activeBook, selection.id)
       .then(setUsedIn)
       .catch(() => setUsedIn(null));
-  }, [book, selection, activeBook]);
+  }, [book, selection, activeBook, api.usedIn]);
 
   // Resolve the comparison variant for the Diff panel.
   useEffect(() => {
@@ -200,7 +211,7 @@ export function App() {
       .resolve(activeBook, selection.composition, ctx)
       .then(setCompareResolved)
       .catch(() => setCompareResolved(null));
-  }, [selection, compareVariant, selectedComposition, activeBook]);
+  }, [selection, compareVariant, selectedComposition, activeBook, api.resolve]);
 
   const selectBook = useCallback((name: string) => {
     setActiveBook(name);
@@ -238,7 +249,7 @@ export function App() {
       });
       await loadAnnotations(activeBook);
     },
-    [selection, context, activeBook, loadAnnotations],
+    [selection, context, activeBook, loadAnnotations, api.annotate],
   );
 
   const resolveAnnotation = useCallback(
@@ -246,7 +257,7 @@ export function App() {
       await api.resolveAnnotation(activeBook, id);
       await loadAnnotations(activeBook);
     },
-    [activeBook, loadAnnotations],
+    [activeBook, loadAnnotations, api.resolveAnnotation],
   );
 
   // Annotations belonging to exactly the variant on screen (composition + context).
@@ -293,7 +304,7 @@ export function App() {
           title={selection.composition}
           subtitle={selection.variant}
           segments={resolved.segments}
-          tokens={lint?.tokens}
+          {...(lint?.tokens !== undefined ? { tokens: lint.tokens } : {})}
           annotations={variantAnnotations}
           onAnnotate={addAnnotation}
         />

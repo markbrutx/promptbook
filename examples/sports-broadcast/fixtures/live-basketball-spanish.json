@@ -1,0 +1,14 @@
+{
+  "name": "live-basketball-spanish",
+  "prompt": "live-commentary-line",
+  "context": {
+    "sport": "basketball",
+    "locale": "Spanish",
+    "tier": "free",
+    "platform": "broadcast-tv",
+    "model": "open-source",
+    "compliance": "standard"
+  },
+  "input": "Fast break: point guard drives, drops to the wing, three at the buzzer.",
+  "assert": []
+}

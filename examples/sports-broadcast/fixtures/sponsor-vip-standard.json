@@ -1,0 +1,17 @@
+{
+  "name": "sponsor-vip-standard",
+  "prompt": "sponsor-mention",
+  "context": {
+    "sport": "football",
+    "locale": "English",
+    "tier": "vip",
+    "platform": "broadcast-tv",
+    "model": "open-source",
+    "compliance": "standard",
+    "sponsor": "the official broadcast partner"
+  },
+  "input": "Free-kick from 22 metres curls into the top corner to make it 1-0.",
+  "assert": [
+    { "type": "contains", "value": "official broadcast partner" }
+  ]
+}

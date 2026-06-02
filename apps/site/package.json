@@ -1,0 +1,42 @@
+{
+  "name": "@markbrutx/promptbook-site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Public demo site for promptbook: landing, docs, and an in-browser viewer of bundled example books.",
+  "scripts": {
+    "dev": "next dev",
+    "prebuild": "node scripts/build-demo.mjs && node scripts/snapshot-cli-help.mjs",
+    "predev": "node scripts/build-demo.mjs && node scripts/snapshot-cli-help.mjs",
+    "build": "next build",
+    "build:demo": "node scripts/build-demo.mjs",
+    "build:cli-help": "node scripts/snapshot-cli-help.mjs",
+    "start": "next start",
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest --run",
+    "check": "biome check .",
+    "lint": "biome check ."
+  },
+  "dependencies": {
+    "@markbrutx/promptbook-core": "*",
+    "@markbrutx/promptbook-viewer": "*",
+    "fumadocs-core": "15.8.5",
+    "fumadocs-mdx": "13.0.8",
+    "fumadocs-ui": "15.8.5",
+    "next": "15.5.19",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "latest",
+    "@tailwindcss/postcss": "4.3.0",
+    "@types/mdx": "^2.0.13",
+    "@types/node": "^20.14.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@typescript/native-preview": "latest",
+    "tailwindcss": "4.3.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

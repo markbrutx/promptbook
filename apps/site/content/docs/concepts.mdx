@@ -1,0 +1,81 @@
+---
+title: Concepts
+description: WHAT / WHEN / HOW. The three layers promptbook keeps strictly separate.
+---
+
+Three layers, kept apart on purpose.
+
+## WHAT · fragments
+
+A _fragment_ is a Markdown file with a YAML frontmatter id. It is one reusable piece of prompt text.
+
+```md title="examples/support-assistant/fragments/persona.md"
+---
+id: persona
+kind: persona
+tags: [support, voice]
+---
+You are a customer support assistant. You are accurate, calm, and helpful,
+and you only state things you can verify from the conversation.
+```
+
+Bodies may reference context with `${path}`:
+
+```md title="examples/sports-broadcast/fragments/locale.md"
+---
+id: locale
+kind: language-directive
+---
+Write your entire response in ${locale}.
+```
+
+Missing variables render empty and emit a warning on the trace. They never throw.
+
+## WHEN · rules
+
+A _composition_ has a base list of fragment ids and a list of declarative rules. A rule has a `when` clause and exactly one action.
+
+```yaml title="examples/support-assistant/rules/reply.yaml"
+name: reply
+base:
+  - persona
+  - reply-tone-warm
+  - guardrails
+  - reply-task
+  - reply-format-prose
+  - locale
+rules:
+  - when: { tone: terse }
+    replace: { reply-tone-warm: reply-tone-terse }
+
+  - when: { model: gpt }
+    replace: { reply-format-prose: reply-format-json }
+  - when: { model: claude }
+    replace: { reply-format-prose: reply-format-xml }
+```
+
+Rules apply in declaration order, later wins. `forbid` is the final filter and always wins. There is no solver, only a boring cascade.
+
+## HOW · resolve
+
+`resolve(input)` returns a string and a trace:
+
+```ts
+import { resolve } from "@markbrutx/promptbook-core";
+
+const { text, trace } = await resolve({
+  promptsDir: "examples/support-assistant",
+  prompt: "reply",
+  context: { model: "gpt", tone: "warm", locale: "English" },
+});
+```
+
+You hand `text` to your model. `trace` tells you which rules fired, which fragments were replaced, what was added, what was forbidden, which context axes never matched, and any non-fatal warnings. That is the explain output the [viewer](/docs/viewer) renders.
+
+## Why the split
+
+- **Determinism.** Given the same fragments and the same context, `resolve()` returns byte-identical text every time.
+- **Locality.** A new policy is a new rule, not a new branch in five call-sites.
+- **Inspectability.** The trace shows _why_ the prompt looks the way it does. The viewer paints each fragment a different colour on top of the resolved text so you can see the parts.
+
+The next pages drill into each layer.

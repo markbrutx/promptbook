@@ -1,0 +1,36 @@
+---
+title: Viewer
+description: A local web app that shows your book, resolves variants live, and explains every rule.
+---
+
+The viewer is a "Storybook for prompts": one page that lists every composition, every fragment, every code-prompt, and lets you re-assemble any variant under any context, with the rule cascade explained next to the resolved text.
+
+You can try it right now without installing anything: the [live demo](/demo/sports-broadcast) on this site is the same viewer, running entirely in the browser.
+
+## Running it locally
+
+```bash
+promptbook view --dir examples/sports-broadcast
+```
+
+A free port is picked automatically; pass `--port 4000` to pin it. The viewer watches the prompts folder and hot-reloads on every change.
+
+## The panels
+
+- **Sidebar (left).** A book switcher (when the workspace has more than one book), a tree of compositions with their variants, a list of code-prompts (builder-backed prompts that ship with frozen sample output), and a flat list of fragments grouped by `kind`.
+- **Canvas (center).** The resolved prompt with each fragment painted a different colour; hover for the fragment id, click to jump into the fragment view. The footer shows the rough token count.
+- **Rail (right).** Controls (one input per context axis the composition's rules reference), a Diff dropdown to compare with another variant or fixture, an Annotations panel, and the **Explain** block: every rule, whether it fired and why, plus the final order, replacements, additions, and forbids.
+
+## Reading the explain
+
+A rule line has three states:
+
+- `✓ #N action [when]` · the rule fired. The line shows the effect, e.g. `replace sport-football -> sport-basketball`.
+- `✗ #N action [when] · context.<key>="<value>" does not equal expected "<expected>"` · the rule did not fire because some key in `when:` was missing or did not match.
+- A trailing warning under `warnings:` · something soft happened: a missing `${var}`, an `replace` whose `from` id was not present, an unknown fragment id.
+
+The final order is the read-out you reproduce in code by calling `resolve()` with the same context.
+
+## Annotations
+
+In the local viewer (not on this static site), select text inside any rendered fragment to leave a comment for the agent that drafts your fragments and rules. The CLI's `promptbook annotations list / resolve / clear` commands manage the queue. The static demo on this site is read-only: comments cannot be saved.

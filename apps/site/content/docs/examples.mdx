@@ -1,0 +1,45 @@
+---
+title: Examples
+description: Bundled example books, each runnable locally and live in the browser.
+---
+
+Two example books ship in the repo. Each is a real, self-contained prompts folder you can `cd` into and run the CLI against, and each has a live, interactive page on this site.
+
+## Sports broadcast
+
+A synthetic broadcaster persona across 10 compositions and six context axes. Demonstrates the two cascades that incumbents tend to need:
+
+- **Multi-model output cascade.** The `post-game-analysis` composition swaps its output-format fragment based on `model`: prose by default, JSON for `gpt`, XML tagged for `claude`. One logical prompt, three output contracts.
+- **Forbid-wins compliance cascade.** The `social-post` composition adds a sponsor block when `tier=vip` and forbids it when `compliance=kid-safe`. `forbid` is the final filter, so `vip+kid-safe` still produces a clean post with no sponsor content.
+
+→ [Open the live demo](/demo/sports-broadcast)
+
+```bash
+cd examples/sports-broadcast
+promptbook ls
+promptbook resolve post-game-analysis \
+  --ctx sport=football --ctx model=claude --ctx tier=vip --explain
+```
+
+## Support assistant
+
+The minimal quickstart book. Two compositions (`reply`, `escalation`) share a small fragment pool. Same multi-model output cascade as the sports book, scaled down to the smallest interesting example.
+
+→ [Open the live demo](/demo/support-assistant)
+
+```bash
+cd examples/support-assistant
+promptbook ls
+promptbook resolve reply --ctx model=gpt --ctx tone=warm --ctx locale=English
+```
+
+## Run any book in the browser, locally
+
+You don't need a deployed demo to interact with a prompts folder. Point the local viewer at the folder and it spins up the same UI:
+
+```bash
+promptbook view --dir examples/sports-broadcast
+# or, from inside a single-book folder:
+cd examples/sports-broadcast
+promptbook view
+```

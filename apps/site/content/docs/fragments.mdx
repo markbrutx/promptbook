@@ -1,0 +1,81 @@
+---
+title: Fragments
+description: File layout, frontmatter, and ${path} placeholders.
+---
+
+A _fragment_ is a Markdown file with a YAML frontmatter block. The fragment id is the only required field.
+
+## Layout
+
+```
+my-prompts/
+├─ promptbook.json    # promptsDir: "."  (or any path)
+├─ fragments/         # *.md, recursively walked
+│  ├─ persona.md
+│  ├─ guardrails.md
+│  └─ locale.md
+├─ rules/             # *.yaml, one per composition
+└─ fixtures/          # *.json, named context presets
+```
+
+`promptbook.json` lets the CLI find the prompts folder without `--dir`. It is optional.
+
+## Frontmatter
+
+```md
+---
+id: persona             # required, unique across the book
+kind: persona           # optional classification
+tags: [support, voice]  # optional, free-form
+---
+You are a customer support assistant…
+```
+
+`kind` is informational, but the lint can use it (e.g. the `language-directive-position` rule pins fragments tagged `language-directive` to an edge of the prompt). `tags` are free-form and surface in the viewer.
+
+## `${path}` placeholders
+
+A fragment body may interpolate context with `${path}`:
+
+```md title="fragments/locale.md"
+---
+id: locale
+kind: language-directive
+---
+Write your entire response in ${locale}.
+```
+
+```md title="fragments/sponsor-mention.md"
+---
+id: sponsor-mention
+kind: integration
+tags: [sponsor]
+---
+Sponsor integration: include exactly one short mention of the placeholder
+${sponsor}, between the opening narrative and the closing line.
+```
+
+Lookup is one level: `${locale}` looks at `context.locale`. To escape a literal `${…}`, write `\${…}`. The backslash is stripped, the braces survive.
+
+If a variable is missing, the placeholder renders to empty string and the trace records a warning. The engine does not throw on data, it shows holes.
+
+## Discovery
+
+`loadPrompts(dir)` walks `fragments/` recursively, parses frontmatter, and indexes by id. Duplicate ids produce a warning (later wins). Files outside the folder are not loaded.
+
+```ts
+import { loadPrompts } from "@markbrutx/promptbook-core";
+
+const book = await loadPrompts("examples/support-assistant");
+console.log([...book.fragments.keys()].sort());
+// → ['escalation-format', 'escalation-input', 'escalation-task', 'guardrails',
+//    'locale', 'persona', 'reply-format-json', 'reply-format-prose',
+//    'reply-format-xml', 'reply-task', 'reply-tone-terse', 'reply-tone-warm']
+```
+
+The CLI's `ls` shows the same view:
+
+```bash
+cd examples/support-assistant
+promptbook ls --fragments
+```

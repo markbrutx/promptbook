@@ -1,0 +1,14 @@
+{
+  "name": "half-time-tennis-japanese",
+  "prompt": "half-time-recap",
+  "context": {
+    "sport": "tennis",
+    "locale": "Japanese",
+    "tier": "vip",
+    "platform": "mobile-app",
+    "model": "open-source",
+    "compliance": "standard"
+  },
+  "input": "Set one ended 7-5 after two breaks of serve. Serve speed dropped in the final three games; second-serve points won fell from 62% to 41%.",
+  "assert": []
+}

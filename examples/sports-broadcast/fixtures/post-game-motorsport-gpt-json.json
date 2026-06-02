@@ -1,0 +1,17 @@
+{
+  "name": "post-game-motorsport-gpt-json",
+  "prompt": "post-game-analysis",
+  "context": {
+    "sport": "motorsport",
+    "locale": "English",
+    "tier": "premium",
+    "platform": "broadcast-tv",
+    "model": "gpt",
+    "compliance": "standard"
+  },
+  "input": "Winner held a 4-second gap from lap 18. Two safety cars compressed the field. Final podium: P1 medium-stint, P2 hard-stint undercut, P3 one-stop.",
+  "assert": [
+    { "type": "json-valid" },
+    { "type": "contains", "value": "headline" }
+  ]
+}

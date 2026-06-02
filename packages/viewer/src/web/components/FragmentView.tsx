@@ -18,13 +18,13 @@ export function FragmentView({ fragment, usedIn, onSelectVariant }: FragmentView
             {fragment.id}
           </h1>
           <p className="muted">
-            {fragment.kind ?? "—"}
+            {fragment.kind ?? "·"}
             {fragment.tags.length > 0 ? ` · ${fragment.tags.join(", ")}` : ""} · {fragment.sourceFile}
           </p>
         </div>
       </header>
 
-      <pre className="segment" style={{ background: "#f6f8fa" }}>
+      <pre className="segment" style={{ background: "var(--panel)" }}>
         {fragment.body}
       </pre>
 

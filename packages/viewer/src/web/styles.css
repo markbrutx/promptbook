@@ -1,29 +1,50 @@
 :root {
-  --bg: #fff;
-  --panel: #f6f8fa;
-  --border: #e1e4e8;
-  --text: #1f2328;
-  --muted: #6e7781;
-  --accent: #4f46e5;
-  --warn: #b35900;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 14px;
-  color: var(--text);
+  --bg: #0a0b0e;
+  --panel: #111317;
+  --panel-2: #15181d;
+  --border: #22262e;
+  --border-strong: #3a3f49;
+  --text: #eceef1;
+  --muted: #8b919c;
+  --subtle: #5a5f69;
+  --accent: #b8ff66;
+  --accent-soft: rgba(184, 255, 102, 0.18);
+  --warn: #ffb347;
+  --danger: #ff6e8a;
 }
 
-* {
+.layout * {
   box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: var(--bg);
 }
 
 .layout {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr) 380px;
+  height: 100%;
+  min-height: 600px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans-next), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  /* Match the rest of the dark site so form controls render with the right
+     chrome and pastel fragment tints stay readable. */
+  color-scheme: dark;
+}
+
+/* When the viewer is the only thing on the page (CLI `promptbook view`), let it
+   fill the viewport. The site's demo island sizes the host explicitly. */
+html:has(> body > #root > .layout) body {
+  margin: 0;
+  background: var(--bg);
+}
+html:has(> body > #root > .layout) {
+  height: 100%;
+}
+html:has(> body > #root > .layout) body {
   height: 100vh;
+}
+#root:has(> .layout) {
+  height: 100%;
 }
 
 /* Sidebar */
@@ -102,12 +123,16 @@ body {
 }
 
 .tree-item:hover {
-  background: #eaeef2;
+  background: var(--panel-2);
+  color: var(--text);
 }
 
 .tree-item.active {
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  padding-left: 4px;
 }
 
 .link {
@@ -175,6 +200,11 @@ body {
   padding: 16px 12px 12px;
   border-radius: 6px;
   border: 1px solid var(--border);
+  /* Pin the colour so the segment text stays readable even when the viewer is
+     embedded in a page whose root sets `color` to something else (Fumadocs +
+     dark-mode-aware tokens used to leak in here, painting text near-invisible
+     on the pastel tints). */
+  color: var(--text);
   white-space: pre-wrap;
   word-break: break-word;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
@@ -187,10 +217,15 @@ body {
   top: 0;
   right: 0;
   font-size: 10px;
-  padding: 1px 6px;
-  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-right: none;
   border-bottom-left-radius: 6px;
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-mono-next), ui-monospace, "SF Mono", Menlo, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 
@@ -224,11 +259,19 @@ body {
 select,
 input {
   width: 100%;
-  padding: 4px 6px;
+  padding: 5px 8px;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 4px;
   font: inherit;
-  background: #fff;
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+select:focus,
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .book-switcher select {
@@ -260,10 +303,16 @@ input {
 
 .control-add button {
   border: 1px solid var(--border);
-  border-radius: 5px;
-  background: #fff;
+  border-radius: 4px;
+  background: var(--panel-2);
+  color: var(--text);
   cursor: pointer;
-  padding: 0 10px;
+  padding: 0 12px;
+}
+
+.control-add button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Explain + lint */
@@ -277,32 +326,151 @@ input {
 }
 
 .rules li {
-  padding: 4px 0;
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 4px 6px;
+  padding: 6px 0;
   border-bottom: 1px solid var(--border);
   font-size: 12px;
+  line-height: 1.4;
 }
 
-.rules li.skipped {
-  color: var(--muted);
+.rules li:last-child {
+  border-bottom: none;
 }
 
 .rule-mark {
-  margin-right: 6px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.rule-fired .rule-mark {
+  color: var(--accent);
+}
+
+.rule-skipped {
+  color: var(--muted);
+}
+
+.rule-skipped .rule-mark {
+  opacity: 0.5;
+}
+
+.rule-body {
+  min-width: 0;
+}
+
+.rule-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
 }
 
 .rule-action {
   font-weight: 600;
-  margin-right: 6px;
+  font-family: ui-monospace, monospace;
+  color: var(--text);
+}
+
+.rule-skipped .rule-action {
+  color: var(--muted);
+}
+
+.rule-when {
+  font-family: ui-monospace, monospace;
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .rule-effect {
   font-family: ui-monospace, monospace;
-  margin-top: 2px;
+  margin: 4px 0 0;
+  color: var(--text);
 }
 
 .rule-reason {
   color: var(--muted);
-  margin-top: 2px;
+  margin: 4px 0 0;
+  font-style: italic;
+  font-size: 11px;
+}
+
+.skipped-block {
+  margin-top: 10px;
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+}
+
+.skipped-summary {
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  list-style: none;
+  padding: 2px 0;
+}
+
+.skipped-summary::-webkit-details-marker {
+  display: none;
+}
+
+.skipped-summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform 120ms ease;
+}
+
+.skipped-block[open] .skipped-summary::before {
+  transform: rotate(90deg);
+}
+
+.effects {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 4px 8px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.effects dt {
+  font-family: ui-monospace, monospace;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding-top: 2px;
+}
+
+.effects dd {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  word-break: break-word;
+}
+
+.notice {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text);
+  background: rgba(255, 179, 71, 0.08);
+  border: 1px solid rgba(255, 179, 71, 0.35);
+  border-radius: 5px;
+  padding: 8px 10px;
+}
+
+.notice strong {
+  display: block;
+  color: var(--warn);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+
+.small {
+  font-size: 11px;
 }
 
 .order {
@@ -325,18 +493,20 @@ input {
   text-transform: uppercase;
   font-size: 10px;
   font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: #eaeef2;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--panel-2);
+  color: var(--muted);
 }
 
 .finding.error .finding-sev {
-  background: #ffd7d5;
-  color: #a40e26;
+  background: rgba(255, 110, 138, 0.14);
+  color: var(--danger);
 }
 
 .finding.warning .finding-sev {
-  background: #fff1c2;
+  background: rgba(255, 179, 71, 0.14);
   color: var(--warn);
 }
 
@@ -353,7 +523,7 @@ input {
   border: 1px solid var(--border);
   border-radius: 6px;
   overflow-x: auto;
-  background: #fff;
+  background: var(--panel-2);
 }
 
 .diff-row {
@@ -362,11 +532,13 @@ input {
 }
 
 .diff-row.add {
-  background: #e6ffec;
+  background: rgba(184, 255, 102, 0.1);
+  color: var(--accent);
 }
 
 .diff-row.remove {
-  background: #ffebe9;
+  background: rgba(255, 110, 138, 0.12);
+  color: var(--danger);
 }
 
 .diff-mark {
@@ -377,21 +549,23 @@ input {
 
 /* Annotations */
 .annot-mark {
-  background: #fff3b0;
+  background: rgba(255, 179, 71, 0.18);
   border-bottom: 2px solid var(--warn);
   border-radius: 2px;
   padding: 0 1px;
+  color: var(--text);
 }
 
 .annot-popover {
   position: fixed;
   z-index: 20;
   width: 280px;
-  padding: 10px;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  color: var(--text);
 }
 
 .annot-popover textarea {
@@ -409,12 +583,18 @@ input {
 }
 
 .annot-actions button[type="button"]:last-child {
-  border: 1px solid var(--border);
-  border-radius: 5px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
   padding: 4px 12px;
   cursor: pointer;
+  font-weight: 600;
+}
+
+.annot-actions button[type="button"]:last-child:hover {
+  background: transparent;
+  color: var(--accent);
 }
 
 .annot-actions button[disabled] {
@@ -457,19 +637,23 @@ input {
 
 /* Shared */
 .badge {
-  font-size: 12px;
+  font-size: 11px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #eaeef2;
+  background: var(--panel-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .badge-code {
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: #2b2b40;
-  color: #fff;
+  letter-spacing: 0.08em;
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 700;
 }
 
 /* Code-prompt canvas */
@@ -483,17 +667,25 @@ input {
 .code-tab {
   font: inherit;
   font-size: 12px;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--panel);
-  color: var(--text);
+  color: var(--muted);
   cursor: pointer;
+  font-family: var(--font-mono-next), ui-monospace, monospace;
+}
+
+.code-tab:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
 }
 
 .code-tab.active {
   background: var(--accent);
   border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
 }
 
 .code-diff {

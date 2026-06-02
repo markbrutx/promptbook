@@ -1,0 +1,14 @@
+{
+  "name": "ticker-motorsport-english",
+  "prompt": "ticker-overlay",
+  "context": {
+    "sport": "motorsport",
+    "locale": "English",
+    "tier": "free",
+    "platform": "broadcast-tv",
+    "model": "open-source",
+    "compliance": "standard"
+  },
+  "input": "Leader pits, drops to P4, gap to new leader 6.2s.",
+  "assert": []
+}

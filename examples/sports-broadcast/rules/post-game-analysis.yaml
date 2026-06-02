@@ -1,0 +1,43 @@
+name: post-game-analysis
+# This composition is the model-cascade exhibit: the output format is a single
+# fragment in base, and a rule swaps that fragment based on the `model` axis —
+# the same play promptbook makes for any output contract.
+base:
+  - persona
+  - guardrails
+  - sport-football
+  - tier-free
+  - platform-broadcast-tv
+  - compliance-standard
+  - task-post-game-analysis
+  - format-prose
+  - locale
+rules:
+  - when: { sport: basketball }
+    replace: { sport-football: sport-basketball }
+  - when: { sport: tennis }
+    replace: { sport-football: sport-tennis }
+  - when: { sport: motorsport }
+    replace: { sport-football: sport-motorsport }
+
+  - when: { tier: premium }
+    replace: { tier-free: tier-premium }
+  - when: { tier: vip }
+    replace: { tier-free: tier-vip }
+
+  - when: { platform: mobile-app }
+    replace: { platform-broadcast-tv: platform-mobile-app }
+  - when: { platform: social }
+    replace: { platform-broadcast-tv: platform-social }
+
+  - when: { compliance: kid-safe }
+    replace: { compliance-standard: compliance-kid-safe }
+  - when: { compliance: betting-allowed-region }
+    replace: { compliance-standard: compliance-betting }
+
+  # Multi-model compilation: same logical prompt, different output contract per
+  # target model. The `model` axis is just another context value.
+  - when: { model: gpt }
+    replace: { format-prose: format-json }
+  - when: { model: claude }
+    replace: { format-prose: format-xml }

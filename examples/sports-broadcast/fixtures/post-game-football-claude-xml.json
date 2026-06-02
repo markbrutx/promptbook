@@ -1,0 +1,16 @@
+{
+  "name": "post-game-football-claude-xml",
+  "prompt": "post-game-analysis",
+  "context": {
+    "sport": "football",
+    "locale": "English",
+    "tier": "vip",
+    "platform": "broadcast-tv",
+    "model": "claude",
+    "compliance": "standard"
+  },
+  "input": "Final score 2-1. Equalizer in 67th; winner in stoppage time from a set-piece. Visitors had 18 shots, 5 on target; home side, 9 shots, 4 on target.",
+  "assert": [
+    { "type": "contains", "value": "<headline>" }
+  ]
+}

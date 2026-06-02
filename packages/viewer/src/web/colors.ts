@@ -10,12 +10,12 @@ function hueOf(id: string): number {
   return (hash + 360) % 360;
 }
 
-/** Soft background tint for a fragment's segment. */
+/** Soft background tint for a fragment's segment. Dark mode native. */
 export function fragmentColor(id: string): string {
-  return `hsl(${hueOf(id)}deg 70% 88%)`;
+  return `hsl(${hueOf(id)}deg 55% 14%)`;
 }
 
 /** Saturated variant of {@link fragmentColor} for borders/legend swatches. */
 export function fragmentAccent(id: string): string {
-  return `hsl(${hueOf(id)}deg 60% 45%)`;
+  return `hsl(${hueOf(id)}deg 70% 62%)`;
 }

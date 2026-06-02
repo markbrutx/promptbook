@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreExportsUsedInFile": true,
   "workspaces": {
     ".": {
       "entry": ["test-support/**/*.ts"],
@@ -21,6 +22,18 @@
       "entry": ["src/index.ts", "test/**/*.test.ts"],
       "project": ["src/**/*.ts", "src/**/*.tsx"],
       "ignore": ["src/web/env.d.ts"]
+    },
+    "apps/site": {
+      "entry": [
+        "app/**/{page,layout,template,error,loading,not-found,route,default,sitemap,robots,opengraph-image,twitter-image,icon,apple-icon}.{ts,tsx}"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}",
+        "app/**/*.{ts,tsx}"
+      ],
+      "ignoreDependencies": [
+        "@types/mdx"
+      ]
     }
   }
 }

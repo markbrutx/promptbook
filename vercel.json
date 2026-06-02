@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build -w @markbrutx/promptbook-site",
+  "installCommand": "npm install",
+  "outputDirectory": "apps/site/.next",
+  "framework": "nextjs",
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
+}

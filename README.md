@@ -14,17 +14,30 @@ given context are all answerable without running a single model call.
 
 ## Quickstart
 
-Point the CLI at a prompts folder and assemble a prompt. The
-[`examples/support-assistant`](examples/support-assistant) demo is ready to run:
+Three ways to use promptbook. Pick one.
+
+**For your agent.** One command installs the skills your agent uses to read,
+edit and migrate prompts — works with Claude Code, Cursor, Codex, Copilot,
+Gemini and 15+ other agents:
 
 ```bash
-npx @markbrutx/promptbook-cli ls --dir examples/support-assistant
-npx @markbrutx/promptbook-cli resolve reply --dir examples/support-assistant \
-  --ctx model=claude --ctx locale=English --explain
-npx @markbrutx/promptbook-cli view --dir examples/support-assistant   # the web viewer
+npx skills add markbrutx/promptbook
 ```
 
-Or use the library:
+Ships four skills: `promptbook-install`, `promptbook-migrate`,
+`promptbook-doctor`, `promptbook-annotations`. Browse them on
+[skills.sh](https://skills.sh/markbrutx/promptbook).
+
+**For the CLI.** Point it at a prompts folder and assemble a prompt — runs
+without installation:
+
+```bash
+npx @markbrutx/promptbook-cli view --dir examples/support-assistant
+```
+
+Verbs: `ls` · `resolve` · `view` · `lint` · `eval`. Full surface in [CLI](#cli).
+
+**For the library.** Import `resolve()` in any Node or edge runtime:
 
 ```bash
 npm i @markbrutx/promptbook-core
@@ -40,11 +53,11 @@ const { text, trace } = await resolve({
 });
 ```
 
-`text` is the fragments joined with `\n\n`, in final order, with `${...}`
-substituted. `trace` is the explain output: every rule (fired + why), the final
-id order, what was replaced / added / forbidden, context axes no rule matched,
-and warnings. A missing `${var}` renders empty and is recorded in
-`trace.warnings` — the engine never throws on data.
+`text` is the assembled prompt — fragments joined with `\n\n`, in final order,
+with `${...}` substituted. `trace` is the explain output: every rule (fired +
+why), the final id order, what was replaced / added / forbidden, context axes
+no rule matched, and warnings. A missing `${var}` renders empty and is
+recorded in `trace.warnings` — the engine never throws on data.
 
 ## The model: WHAT / WHEN / HOW
 

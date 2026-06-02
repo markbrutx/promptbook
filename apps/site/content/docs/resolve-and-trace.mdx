@@ -1,0 +1,85 @@
+---
+title: Resolve and trace
+description: The deterministic resolver, the trace shape, and the never-throw-on-data rule.
+---
+
+`resolve()` is the only public entry point you usually need. It returns a string and a trace.
+
+## The contract
+
+```ts
+import { resolve } from "@markbrutx/promptbook-core";
+
+const { text, trace } = await resolve({
+  promptsDir: "examples/sports-broadcast",
+  prompt: "post-game-analysis",
+  context: {
+    sport: "motorsport",
+    locale: "English",
+    tier: "premium",
+    platform: "broadcast-tv",
+    model: "claude",
+    compliance: "standard",
+  },
+});
+```
+
+`text` is what you send to the model. Same fragments + same context = byte-identical `text` every time.
+
+## The trace
+
+```ts
+interface Trace {
+  prompt: string;
+  context: Context;
+  rules: RuleTrace[];        // every rule, in declaration order, with fired/why
+  finalOrder: string[];      // fragment ids in join order (output only)
+  replaced: ReplaceTrace[];  // every replacement that fired
+  added: AddTrace[];         // every addition that fired
+  forbidden: ForbidTrace[];  // every forbid that fired
+  unmatchedAxes: UnmatchedAxis[]; // context axes that some rule named but none matched
+  warnings: string[];        // missing variables, unknown fragment refs, etc.
+}
+```
+
+The CLI prints the trace under `--explain`:
+
+```bash
+promptbook resolve post-game-analysis \
+  --dir examples/sports-broadcast \
+  --ctx sport=motorsport --ctx tier=vip --ctx model=claude \
+  --explain
+```
+
+```text title="excerpt"
+rules:
+  ✓ #2 replace [sport=motorsport] → replace sport-football -> sport-motorsport
+  ✗ #3 replace [tier=premium] · context.tier="vip" does not equal expected "premium"
+  ✓ #4 replace [tier=free] → replace tier-free -> tier-vip
+  ✓ #10 replace [model=claude] → replace format-prose -> format-xml
+final order: persona → guardrails → sport-motorsport → tier-vip → … → format-xml → locale
+```
+
+## Determinism boundary
+
+Glue is pure: `resolve()`, `lint()`, `loadPrompts()`, `interpolate()`. No model calls live inside core; the only stochastic step is the adapter you write outside.
+
+This is why the [live demo](/demo/sports-broadcast) can run entirely in the browser: the same `resolveBook(book, prompt, context)` that powers the CLI is re-exported from `@markbrutx/promptbook-core/edge` for edge and browser runtimes.
+
+## Never throw on data
+
+The engine surfaces holes instead of crashing:
+
+- **Missing variable** (`${locale}` with no `context.locale`): the placeholder renders empty and `trace.warnings` records `Missing variable "locale" while rendering fragment "locale"`.
+- **Unknown fragment id** (a rule references a fragment that was not loaded): the id is skipped and a warning is recorded.
+- **Replace target not present** (a `replace` whose `from` is not in the working list): the rule is a no-op and a warning is recorded.
+
+The one thing that does throw is calling `resolve()` with an unknown composition name. That is a programming error, not bad data.
+
+```ts
+try {
+  await resolve({ promptsDir, prompt: "no-such-prompt" });
+} catch (e) {
+  // → "Unknown prompt 'no-such-prompt'. Available compositions: escalation, reply."
+}
+```

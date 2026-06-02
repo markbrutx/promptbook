@@ -4,6 +4,14 @@ dist/
 .DS_Store
 coverage/
 
+# Next.js / Vercel build artifacts in apps/site
+apps/*/.next/
+apps/*/.vercel/
+apps/*/.turbo/
+apps/*/.source/
+apps/*/next-env.d.ts
+apps/*/public/demo/
+
 # secrets & local env (never commit keys, e.g. OPENROUTER_API_KEY)
 .env
 .env.*
@@ -26,5 +34,6 @@ codemaps/
 wb
 
 .agents/skills/
+.claude/
 skills-lock.json
 skills/skill-creator
