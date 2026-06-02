@@ -39,6 +39,22 @@ Two things you should know going in:
 the install first (hand off to `promptbook-install`) — there's nothing to
 audit if the book doesn't load.
 
+### 0.5. Sanity — is the checked-in bundle current?
+
+Before the real audit, run a one-line freshness check:
+
+```bash
+promptbook bundle --check --all
+```
+
+If any book's `book.generated.ts` is stale or missing the doctor's findings
+can otherwise be misleading (the user is reading old assembled output in the
+viewer / their app). Either rebundle (`promptbook bundle --all` or
+`promptbook watch` in a side terminal) and continue, or note the drift in
+the diagnosis report so the user fixes it before acting on the rest of the
+findings. This is **in addition to** the deeper checks below — not a
+replacement for them.
+
 ### 1. Inventory the book
 
 ```bash

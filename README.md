@@ -101,10 +101,19 @@ promptbook resolve <prompt>   Assemble a prompt and print it to stdout (--all: e
 promptbook ls                 List compositions, code-prompts and fragments (--all: cross-book)
 promptbook lint [<prompt>]    Static checks (no model): dead/unused/dangling, budget, banned tokens
 promptbook eval [<name>]      Run fixtures through a model adapter, report pass-rate
-promptbook bundle [<dir>]     Compile a folder into an importable book module
+promptbook bundle [<dir>]     Compile a folder into an importable book module (--all/--check)
+promptbook watch [<dir>]      Rebuild book.generated.ts on every fragment/rule edit
 promptbook view               Start the local web viewer over the folder
 promptbook annotations <a>    Drain the viewer's feedback queue: list | resolve <id> | clear
 ```
+
+`promptbook watch` is the dev loop: it rebundles each book's
+`book.generated.ts` as soon as a fragment / rule / code-prompt /
+`promptbook.json` changes. `promptbook bundle --check --all` is the CI gate:
+it exits 1 when any checked-in `book.generated.ts` has drifted from the source
+folder, so the bundled artifact cannot fall out of sync silently. Pair either
+with `--exclude-code-prompts` to keep `code-prompts/` on disk as metadata
+while shipping a runtime-lean bundle.
 
 `--dir` picks the folder (else `promptbook.json` `promptsDir`, else `./prompts`);
 `--ctx key=value` sets context; `--json` emits machine-readable output. stdout is
@@ -144,7 +153,7 @@ text, attach a comment, and it lands in a file queue an agent drains via
 | Package | What it is |
 |---------|------------|
 | [`@markbrutx/promptbook-core`](packages/core) | The library. `resolve()`, `lint()`, `eval()`, bundle. Pure functions, zero CLI/UI deps. Ships a zero-dep `./edge` build for edge runtimes. |
-| [`@markbrutx/promptbook-cli`](packages/cli) | `promptbook resolve \| ls \| lint \| eval \| bundle \| view \| annotations`. The surface for agents and CI. |
+| [`@markbrutx/promptbook-cli`](packages/cli) | `promptbook resolve \| ls \| lint \| eval \| bundle \| watch \| view \| annotations`. The surface for agents and CI. |
 | [`@markbrutx/promptbook-viewer`](packages/viewer) | `promptbook view` → a local web app. Sidebar tree, colored segments, context pickers, used-in graph, diff, annotate-to-agent. |
 | [`@markbrutx/promptbook-openrouter`](packages/openrouter) | OpenRouter `ModelAdapter` for `eval`. Network lives here; core stays pure. |
 

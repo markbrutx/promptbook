@@ -89,3 +89,7 @@ which fragment to open (`fragments/<id>.md`) and the exact text they meant.
 - `.annotations/` is gitignored — feedback is local working state, not history.
 - If `anchorText` appears more than once in a fragment, use the surrounding
   `target.context` and your judgment; the anchor is a hint, not a guarantee.
+- Pair `promptbook watch` with `promptbook view` for a tight feedback loop:
+  edit a fragment → watch rebundles the book → the viewer renders the new
+  assembly → the human selects text and leaves the next annotation. No
+  manual `bundle` between iterations.

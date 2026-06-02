@@ -26,10 +26,11 @@ describe("agnosticism guard", () => {
     for (const dep of Object.keys(runtimeDeps)) {
       expect(CLI_UI_DEPS).not.toContain(dep);
     }
-    // Only the core and the model adapter; no third-party CLI/UI libraries.
+    // Core, the model adapter, and chokidar for the `watch` command — no CLI/UI libraries.
     expect(Object.keys(pkg.dependencies ?? {}).sort()).toEqual([
       "@markbrutx/promptbook-core",
       "@markbrutx/promptbook-openrouter",
+      "chokidar",
     ]);
     // The viewer is an optional dependency (lazily imported by `view`).
     expect(Object.keys(pkg.optionalDependencies ?? {})).toEqual(["@markbrutx/promptbook-viewer"]);

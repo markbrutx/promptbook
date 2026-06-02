@@ -10,14 +10,30 @@ npm i -D @markbrutx/promptbook-cli
 ## Commands
 
 ```
-promptbook resolve <name> --explain     # assemble a prompt; print the explain trace
-promptbook ls                           # list fragments / compositions / code-prompts
-promptbook lint <name>                  # static checks: token budget, banned tokens, dead rules…
-promptbook eval --case <fixture>        # run fixtures against a model adapter → pass-rate
-promptbook bundle -o book.generated.ts  # serialize a prompts folder to a portable module
-promptbook view                         # open the viewer (needs @markbrutx/promptbook-viewer)
+promptbook resolve <name> --explain         # assemble a prompt; print the explain trace
+promptbook ls                               # list fragments / compositions / code-prompts
+promptbook lint <name>                      # static checks: token budget, banned tokens, dead rules…
+promptbook eval --case <fixture>            # run fixtures against a model adapter → pass-rate
+promptbook bundle -o book.generated.ts      # serialize a prompts folder to a portable module
+promptbook bundle --all                     # rebundle every book in a workspace (one artifact per book)
+promptbook bundle --check [--all]           # CI gate: exit 1 when book.generated.ts is stale or missing
+promptbook bundle --exclude-code-prompts    # serialize code-prompts as an empty map (runtime-lean bundle)
+promptbook watch                            # rebundle book.generated.ts on every fragment/rule edit
+promptbook view                             # open the viewer (needs @markbrutx/promptbook-viewer)
 promptbook annotations list|resolve|clear
 ```
+
+Dev loop:
+
+- `promptbook watch` keeps `book.generated.ts` in sync while you edit
+  `fragments/`, `rules/`, `code-prompts/` or `promptbook.json`
+  (one rebundle per book, debounced 250 ms; multi-book workspaces rebundle in
+  parallel).
+- `promptbook bundle --check --all` is the CI gate: it exits non-zero when any
+  book's checked-in `book.generated.ts` drifts from the prompts folder, so
+  `book.generated.ts` and the source files cannot fall out of sync silently.
+- `promptbook bundle --exclude-code-prompts` ships a runtime-lean bundle while
+  keeping `code-prompts/` on disk as metadata for `ls` / the viewer.
 
 The prompts folder is resolved from `--dir`, then `promptbook.json` (the
 nearest one found by walking up from the current directory — same model as

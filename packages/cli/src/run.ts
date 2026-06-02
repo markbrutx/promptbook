@@ -8,6 +8,7 @@ import { cmdLint } from "./commands/lint.js";
 import { cmdLs } from "./commands/ls.js";
 import { cmdResolve } from "./commands/resolve.js";
 import { cmdView } from "./commands/view.js";
+import { cmdWatch } from "./commands/watch.js";
 import { defaultIO, type IO } from "./io.js";
 
 const HELP = `promptbook — compose prompts from reusable fragments
@@ -19,7 +20,8 @@ Commands:
   resolve [<book>/]<prompt>  Assemble a prompt and print it to stdout (--all: every book)
   lint [<prompt>]         Run static checks; with no prompt, book rules only
   eval [<name|glob>]      Run fixtures through a model adapter, report pass-rate
-  bundle [<dir>]          Compile a prompts folder into an importable book module
+  bundle [<dir>]          Compile a prompts folder into an importable book module (--all/--check)
+  watch [<dir>]           Rebuild book.generated.ts as fragments/rules/compositions change
   view                    Start the local web viewer over the workspace (book switcher)
   annotations <action>    Drain the viewer's feedback queue: list | resolve <id> | clear
   ls                      List compositions and fragments (--all: cross-book inventory)
@@ -39,13 +41,15 @@ Options:
   --samples N             eval: default samples per fixture (default 1; a fixture's own samples wins)
   --threshold R           eval: a fixture passes when passRate >= R (default 1)
   --lint                  eval: run a static lint gate over every variant first
-  -o, --out <file>        bundle: write the generated module to a file (default: stdout)
-  --plain                 bundle: emit a plain module (no type-only import; e.g. for Deno)
+  -o, --out <file>        bundle/watch: write to a file (default: stdout for bundle, <bookDir>/book.generated.ts for watch/--all)
+  --plain                 bundle/watch: emit a plain module (no type-only import; e.g. for Deno)
+  --check                 bundle: compare with the existing output; exit 1 on drift or missing artifact
+  --exclude-code-prompts  bundle/watch: serialize code-prompts as an empty map (runtime-lean bundle)
   --port N                view: port for the viewer server (default: a free port)
   --no-open               view: do not open the browser after starting
   --fragments             ls: list fragments only
   --compositions          ls: list compositions only
-  --all                   ls/resolve: span every book in the workspace
+  --all                   ls/resolve/bundle: span every book in the workspace
   -h, --help              Show this help
   -v, --version           Show the version
 
@@ -98,6 +102,8 @@ export async function run(argv: string[], io: IO = defaultIO()): Promise<number>
       return cmdEval(args, io);
     case "bundle":
       return cmdBundle(args, io);
+    case "watch":
+      return cmdWatch(args, io);
     case "view":
       return cmdView(args, io);
     case "annotations":

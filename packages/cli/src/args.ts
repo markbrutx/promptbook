@@ -20,8 +20,12 @@ export interface ParsedArgs {
   contextFile?: string;
   fragments: boolean;
   compositions: boolean;
-  /** ls/resolve: operate across every book in the workspace. */
+  /** ls/resolve/bundle: operate across every book in the workspace. */
   all: boolean;
+  /** bundle: compare the generated output with the existing artifact and exit non-zero on drift. */
+  check: boolean;
+  /** bundle: serialize without code-prompts so a runtime bundle stays lean. */
+  excludeCodePrompts: boolean;
   /** lint: estimated token ceiling for the token-budget rule. */
   maxTokens?: number;
   /** lint: treat warnings as failures for the exit code. */
@@ -91,6 +95,8 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
       fragments: { type: "boolean" },
       compositions: { type: "boolean" },
       all: { type: "boolean" },
+      check: { type: "boolean" },
+      "exclude-code-prompts": { type: "boolean" },
       "max-tokens": { type: "string" },
       strict: { type: "boolean" },
       model: { type: "string" },
@@ -137,6 +143,8 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     fragments: values.fragments ?? false,
     compositions: values.compositions ?? false,
     all: values.all ?? false,
+    check: values.check ?? false,
+    excludeCodePrompts: values["exclude-code-prompts"] ?? false,
     maxTokens,
     strict: values.strict ?? false,
     model: values.model,

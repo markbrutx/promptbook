@@ -260,6 +260,28 @@ test, delete the original literal/file. Don't leave a "for reference" copy
 — it becomes the wrong source of truth within a week. Git history is the
 backup.
 
+### 10. Keep the migration moving with `promptbook watch`
+
+Migrations are iterative — fragment shapes shift, rules grow, you re-run
+`resolve` after every edit. Do not teach the user to run `promptbook bundle`
+by hand after each change. Run **`promptbook watch`** in a side terminal: it
+rebundles each book's `book.generated.ts` as soon as you save a fragment, a
+rule, a composition file or `promptbook.json`. The consumer code that imports
+the bundle stays current without a manual step.
+
+When the migration leaves builder-rendered prompts as `code-prompts/`
+metadata (a common end-state for prompts that pre-compute their text in
+code), pass `--exclude-code-prompts` to the bundle / watch step:
+
+```bash
+promptbook bundle --exclude-code-prompts -o book.generated.ts
+promptbook watch --exclude-code-prompts
+```
+
+This keeps `code-prompts/` on disk for `ls` and the viewer (so the migrator
+still sees them) while serializing them as an empty map in the runtime
+bundle (so the consumer is not forced to ship the captured samples).
+
 ## Migration smells to flag to the user
 
 If during migration you notice any of these, surface them before finishing

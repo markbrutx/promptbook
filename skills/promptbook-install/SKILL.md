@@ -174,6 +174,23 @@ If `npx promptbook ls` prints "no compositions found", the most common cause
 is `promptsDir` not matching where you put the files. Fix that, do not patch
 around it.
 
+### 6. Dev loop (the part you keep using after install)
+
+- **`promptbook watch`** — leave it running while you edit fragments / rules /
+  compositions / code-prompts / `promptbook.json`. It rebundles each book's
+  `book.generated.ts` automatically (debounced 250 ms per book), so the
+  consumer code that `import`s the book always sees the latest assembly. No
+  manual `promptbook bundle` after every save.
+- **`promptbook bundle --check --all`** — add this to CI (alongside
+  `lint`/`typecheck`/`test`). It exits 1 when any checked-in
+  `book.generated.ts` has drifted from the prompts folder, so a forgotten
+  rebundle cannot ship.
+- **`promptbook bundle --exclude-code-prompts`** — use this for the bundle
+  step when `code-prompts/` only exists as metadata for `ls` / the viewer and
+  is not part of the runtime book. The serialized output keeps `codePrompts`
+  as an empty map, so the runtime bundle stays lean and the source folder
+  keeps its full inventory.
+
 ## What not to do
 
 - **Do not invent CLI commands.** There is no `promptbook init`, no
