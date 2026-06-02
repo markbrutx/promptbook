@@ -1,0 +1,33 @@
+{
+  "skill_name": "promptbook-migrate",
+  "evals": [
+    {
+      "id": 1,
+      "name": "hardcoded-string-with-locale-interpolation",
+      "prompt": "I have this in src/ai/chat.ts:\n\n```ts\nimport OpenAI from 'openai';\nconst openai = new OpenAI();\n\nexport async function reply(userMessage: string, locale: string) {\n  return openai.chat.completions.create({\n    model: 'gpt-4o-mini',\n    messages: [\n      { role: 'system', content: `You are a customer support assistant. You are accurate, calm, and helpful. Respond in ${locale}. Reply with a JSON object: { \"reply\": \"...\" }.` },\n      { role: 'user', content: userMessage },\n    ],\n  });\n}\n```\n\npromptbook is already installed. Migrate this prompt.",
+      "expected_output": "The literal system prompt is split into multiple fragments (at least persona, locale, format). A composition rule file `rules/reply.yaml` is created listing them in `base` (locale fragment at start or end, not the middle). The locale fragment uses `${locale}`. The call site is rewritten to call `resolve({ promptsDir, prompt: 'reply', context: { locale } })` and pass the resulting `text` as the system content. The model id `'gpt-4o-mini'` and the user-turn content are preserved. `promptbook resolve reply --ctx locale=English` produces text equivalent to the original literal with `${locale}` filled in. `promptbook lint reply --ctx locale=English` exits 0.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "build-system-function-with-conditionals",
+      "prompt": "I have a function that builds the system prompt with if-statements based on mode and model. Migrate it to promptbook so the conditionals become rules, not code.\n\n```ts\nfunction buildSystem(opts: { mode: 'terse' | 'warm'; model: 'gpt' | 'claude' }) {\n  let s = 'You are a customer support assistant. ';\n  if (opts.mode === 'terse') s += 'Be terse and direct. ';\n  else s += 'Be warm and welcoming. ';\n  if (opts.model === 'gpt') s += 'Reply as JSON: { \"reply\": \"...\" }';\n  else s += 'Reply with XML: <reply>...</reply>';\n  return s;\n}\n```\n\npromptbook is already installed.",
+      "expected_output": "Fragments are created for persona, the two tone variants (warm/terse), the two format variants (json/xml). `rules/reply.yaml` declares a base with the warm tone + json format as defaults, plus two `replace` rules on `tone` and `model` context axes. No conditional logic remains in code beyond passing `mode` and `model` as context values. Call site uses `resolve(...)`. `promptbook resolve reply --ctx mode=terse --ctx model=claude` produces text equivalent to `buildSystem({mode:'terse',model:'claude'})`. Lint green.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "flat-md-file-with-handlebars-placeholders",
+      "prompt": "I have `prompts/assistant.md` with this content, and `src/use-prompt.ts` reads it with `fs.readFileSync` then does `.replace('{{name}}', name).replace('{{role}}', role)`. Migrate to promptbook (already installed):\n\n```\n# System\nYou are {{name}}, a {{role}}.\nBe helpful, accurate, and concise.\n```",
+      "expected_output": "Fragment(s) created from the file content with `{{name}}` and `{{role}}` rewritten as `${name}` and `${role}`. A composition rule file references the fragment(s). The consumer `src/use-prompt.ts` is rewritten to call `resolve({ promptsDir, prompt, context: { name, role } })` — no more manual string replace, no more fs.readFileSync of the prompt file. The original `prompts/assistant.md` is deleted (its content is now in fragments). `promptbook resolve <comp> --ctx name=X --ctx role=Y` produces the expected text. Lint green.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "vercel-ai-sdk-stream-text",
+      "prompt": "Migrate this Vercel AI SDK call to promptbook (already installed). The same system prompt is duplicated across two API routes — chat/route.ts and summarize/route.ts — and I suspect a lot of it is shared.\n\n```ts\n// app/api/chat/route.ts\nstreamText({\n  model: openai('gpt-4o-mini'),\n  system: 'You are a customer support assistant. Be helpful. Respond in English. Use a friendly tone.',\n  prompt: userMessage,\n});\n\n// app/api/summarize/route.ts\nstreamText({\n  model: openai('gpt-4o-mini'),\n  system: 'You are a customer support assistant. Be helpful. Respond in English. Summarize the conversation in 3 bullets.',\n  prompt: conversation,\n});\n```",
+      "expected_output": "Shared text (persona, locale, guardrails) is extracted into shared fragments used by both compositions. Two compositions (`chat`, `summarize`) reference them. The differing parts (the friendly-tone instruction vs the summarize-in-bullets instruction) live in composition-specific fragments. Both routes' `streamText` calls are rewired to use `resolve(...)`. `promptbook ls` shows two compositions sharing at least one fragment. Lint green for both compositions. The user is told explicitly which fragments are now shared so they understand the win.",
+      "files": []
+    }
+  ]
+}

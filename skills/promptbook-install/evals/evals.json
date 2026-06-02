@@ -1,0 +1,26 @@
+{
+  "skill_name": "promptbook-install",
+  "evals": [
+    {
+      "id": 1,
+      "name": "empty-project-fresh-install",
+      "prompt": "I have an empty TypeScript project (just a package.json with name and version). Set up @markbrutx/promptbook in it so I can run `promptbook resolve` and see something work. I have no existing prompts.",
+      "expected_output": "package.json gains @markbrutx/promptbook-core (dep) and @markbrutx/promptbook-cli (devDep). A promptbook.json is created at repo root with `promptsDir: \"prompts\"`. A prompts/ folder is created with fragments/ + rules/ subfolders and a minimal scaffold (at least one fragment and one composition rule). Running `npx promptbook ls` lists the scaffolded composition; `npx promptbook lint` exits 0; `npx promptbook resolve <comp>` prints the assembled text.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "project-with-existing-prompts-dir",
+      "prompt": "I'm setting up promptbook in a project that already has a `prompts/` directory used for a different purpose (it has some README and design notes). Don't clobber it. Get promptbook running.",
+      "expected_output": "The existing `prompts/` directory is preserved untouched. promptbook is configured with a different promptsDir (e.g. `book/` or `promptbook/`). The user is told what path was chosen and why. Verification commands run green.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "user-wants-to-migrate-not-scaffold",
+      "prompt": "Set up promptbook in my project. I already have prompts I want to move over — they're hardcoded strings in src/ai/chat.ts. Don't scaffold an example, I want my real ones.",
+      "expected_output": "Install completes (npm i + promptbook.json + empty fragments/ + rules/ created) but no example fragments/compositions are scaffolded. The agent explicitly hands off to the promptbook-migrate workflow and does not write fake content. Verification of install (without migration) is done: `promptbook ls` succeeds and reports zero compositions, which is correct given no migration has happened yet.",
+      "files": []
+    }
+  ]
+}

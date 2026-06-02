@@ -27,3 +27,7 @@ goals/
 codemaps/
 .reports/
 wb
+
+.agents/skills/
+skills-lock.json
+skills/skill-creator

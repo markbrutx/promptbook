@@ -1,0 +1,32 @@
+{
+  "skill_name": "promptbook-doctor",
+  "evals": [
+    {
+      "id": 1,
+      "name": "book-with-mixed-lint-findings",
+      "prompt": "Audit my prompts/ folder and tell me what's wrong. I haven't touched it in months and I think it's gotten messy.",
+      "expected_output": "The agent runs `promptbook lint` (book-level + per-composition with concrete context values). It groups findings by severity in a diagnosis-style report (critical / bloat / drift / healthy). For each finding it cites file:line and proposes a concrete fix. It does NOT batch-apply edits; it asks the user which sections to act on. Each `ruleId` from the playbook is interpreted correctly (dangling-reference → typo or missing fragment; unused-fragment → delete or wire; dead-rule → redundant; token-budget → trim before bumping; etc.).",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "near-duplicate-fragments-not-lintable",
+      "prompt": "Look at my prompts and tell me if there's anything to clean up. The lint passes but it feels bloated.",
+      "expected_output": "The agent reads fragment files (lint won't catch this). It diffs fragments with similar names or similar lengths and identifies near-duplicates. It proposes one of: merge, extract shared part, parameterize with context. It reports findings even though `promptbook lint` is green — making clear that these are doctor-level (semantic) findings, not lint-level (structural) ones.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "token-budget-exceeded-diagnose-not-bump",
+      "prompt": "`promptbook lint reply --ctx model=gpt` is warning about token-budget — the assembled prompt is 8400 tokens against an 8000 limit. Just bump the max-tokens to 10000?",
+      "expected_output": "The agent does NOT bump `lint.maxTokens` as the first action. It runs `promptbook resolve reply --ctx model=gpt --explain`, identifies the heaviest fragment(s), and proposes specific trims (redundant guardrails bullets, reducing few-shot examples, lifting conditional text into rules). Only after exhausting those options would it consider bumping the budget, and it surfaces the tradeoff to the user explicitly. The reply names specific file:line locations to cut.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "every-fragment-used-by-exactly-one-composition",
+      "prompt": "Review my promptbook setup. I have 3 compositions and 18 fragments.",
+      "expected_output": "The agent runs `promptbook ls --json` and notices that every fragment is used by exactly one composition (no sharing). It surfaces this as the headline finding: the book is functioning as file-shaped literals, not a composed system. It proposes specific candidate extractions — persona, guardrails, locale — that look shareable across compositions based on reading the fragment contents. The diagnosis is concrete (which fragments could be merged, which are unique to each composition) rather than abstract."
+    }
+  ]
+}
