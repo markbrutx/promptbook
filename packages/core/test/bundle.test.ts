@@ -98,18 +98,22 @@ describe("serializeBook", () => {
   it("emits an importable module exporting book: PromptBook", async () => {
     const book = await loadPrompts(dir);
     const module = serializeBook(book);
-    expect(module).toContain('import type { PromptBook } from "@markbrutx/promptbook-core";');
+    expect(module).toContain(
+      'import type { PromptBook, Fragment, Composition, CodePrompt } from "@markbrutx/promptbook-core";',
+    );
     expect(module).toContain("export const book: PromptBook = {");
     expect(module).toContain("export default book;");
-    expect(module).toContain("new Map([");
+    expect(module).toContain("new Map<string, Fragment>([");
     // The module body, with the boilerplate stripped, is the same value.
-    expect(module).toContain(serializeBookExpression(book));
+    expect(module).toContain(serializeBookExpression(book, { typed: true }));
   });
 
   it("honors a custom import specifier", async () => {
     const book = await loadPrompts(dir);
     const module = serializeBook(book, { importSpecifier: "../src/index.js" });
-    expect(module).toContain('import type { PromptBook } from "../src/index.js";');
+    expect(module).toContain(
+      'import type { PromptBook, Fragment, Composition, CodePrompt } from "../src/index.js";',
+    );
   });
 
   it("emits a plain module (no type import/annotation) with typed:false", async () => {

@@ -20,7 +20,9 @@ function restoreFromModule(module: string): PromptBook {
   const end = module.indexOf(";\n\nexport default book;");
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
-  const expression = module.slice(start + marker.length, end);
+  // Typed mode emits `new Map<string, T>(...)`; strip the TS generic args so the
+  // expression is valid JavaScript for `new Function`.
+  const expression = module.slice(start + marker.length, end).replace(/new Map<[^>]*>\(/g, "new Map(");
   return (new Function(`return (${expression});`) as () => PromptBook)();
 }
 
@@ -32,10 +34,12 @@ describe("bundle command", () => {
     const code = await run(["bundle", "--dir", promptsDir], cap.io);
     expect(code).toBe(0);
     const out = cap.out();
-    expect(out).toContain('import type { PromptBook } from "@markbrutx/promptbook-core";');
+    expect(out).toContain(
+      'import type { PromptBook, Fragment, Composition, CodePrompt } from "@markbrutx/promptbook-core";',
+    );
     expect(out).toContain("export const book: PromptBook = {");
     expect(out).toContain("export default book;");
-    expect(out).toContain("new Map([");
+    expect(out).toContain("new Map<string, Fragment>([");
     expect(cap.err()).toBe("");
   });
 
@@ -108,7 +112,9 @@ describe("bundle command", () => {
     );
     expect(code).toBe(0);
     const out = cap.out();
-    expect(out).toContain('import type { PromptBook } from "npm:@markbrutx/promptbook-core@1.2.3";');
+    expect(out).toContain(
+      'import type { PromptBook, Fragment, Composition, CodePrompt } from "npm:@markbrutx/promptbook-core@1.2.3";',
+    );
     expect(out).toContain("export const book: PromptBook = {");
   });
 
@@ -149,7 +155,7 @@ describe("bundle --exclude-code-prompts", () => {
     const code = await run(["bundle", "--dir", promptsDir, "--exclude-code-prompts"], cap.io);
     expect(code).toBe(0);
     const out = cap.out();
-    expect(out).toContain("codePrompts: new Map()");
+    expect(out).toContain("codePrompts: new Map<string, CodePrompt>()");
     expect(out).not.toContain("digest-table");
   });
 });
