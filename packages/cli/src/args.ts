@@ -15,6 +15,13 @@ export interface ParsedArgs {
   out?: string;
   /** bundle: emit a plain module without the type-only import/annotation. */
   plain: boolean;
+  /**
+   * bundle: module specifier for the `import type { PromptBook }` line in typed
+   * mode. Point it at a runtime-resolvable specifier (e.g.
+   * `npm:@markbrutx/promptbook-core@1.2.3`) so a Deno consumer keeps the typed
+   * annotation instead of falling back to `--plain`.
+   */
+  importSpecifier?: string;
   /** Repeated `--ctx key=value` pairs, parsed later by config. */
   ctx: string[];
   contextFile?: string;
@@ -90,6 +97,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
       explain: { type: "boolean" },
       out: { type: "string", short: "o" },
       plain: { type: "boolean" },
+      "import-specifier": { type: "string" },
       ctx: { type: "string", multiple: true },
       "context-file": { type: "string" },
       fragments: { type: "boolean" },
@@ -138,6 +146,7 @@ export function parseCliArgs(argv: string[]): ParsedArgs {
     explain: values.explain ?? false,
     out: values.out,
     plain: values.plain ?? false,
+    importSpecifier: values["import-specifier"],
     ctx: values.ctx ?? [],
     contextFile: values["context-file"],
     fragments: values.fragments ?? false,

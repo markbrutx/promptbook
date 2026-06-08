@@ -100,6 +100,18 @@ describe("bundle command", () => {
     expect(out).toContain("new Map([");
   });
 
+  it("points the typed import at --import-specifier", async () => {
+    const cap = capture();
+    const code = await run(
+      ["bundle", "--dir", promptsDir, "--import-specifier", "npm:@markbrutx/promptbook-core@1.2.3"],
+      cap.io,
+    );
+    expect(code).toBe(0);
+    const out = cap.out();
+    expect(out).toContain('import type { PromptBook } from "npm:@markbrutx/promptbook-core@1.2.3";');
+    expect(out).toContain("export const book: PromptBook = {");
+  });
+
   it("is deterministic across runs", async () => {
     const a = capture();
     const b = capture();

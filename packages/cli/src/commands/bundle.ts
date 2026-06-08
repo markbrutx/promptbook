@@ -67,7 +67,9 @@ function firstDiffLine(actual: string, expected: string): number | null {
 
 /** Build the output text for one book (TypeScript module or JSON). */
 function renderOutput(book: PromptBook, args: ParsedArgs): string {
-  return args.json ? serializeBookJson(book) : serializeBook(book, { typed: !args.plain });
+  return args.json
+    ? serializeBookJson(book)
+    : serializeBook(book, { typed: !args.plain, importSpecifier: args.importSpecifier });
 }
 
 /** Pick the artifact path: explicit `--out`, else `book.generated.ts` next to the prompts folder. */
@@ -186,6 +188,10 @@ async function bundleAll(io: IO, args: ParsedArgs, root: string): Promise<number
  * Flags:
  * - `--json` emits the structured dump instead of the TypeScript module.
  * - `--plain` drops the type-only import (e.g. for Deno consumers).
+ * - `--import-specifier <spec>` sets the module the typed `import type
+ *   { PromptBook }` line points at (default `@markbrutx/promptbook-core`). Use a
+ *   runtime-resolvable specifier such as `npm:@markbrutx/promptbook-core@1.2.3`
+ *   to keep the typed annotation in a Deno consumer instead of `--plain`.
  * - `--exclude-code-prompts` serializes code-prompts as an empty map so the
  *   runtime bundle stays lean while `code-prompts/` keeps living on disk as
  *   metadata for `ls` / the viewer.
