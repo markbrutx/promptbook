@@ -172,7 +172,8 @@ describe("serializeBook", () => {
       warnings: [],
     };
     const expression = serializeBookExpression(empty);
-    expect(expression).toContain("new Map([])");
+    expect(expression).toContain("new Map()");
+    expect(expression).not.toContain("new Map([])");
     const restored = restore(expression);
     expect(restored.fragments.size).toBe(0);
     expect(restored.compositions.size).toBe(0);

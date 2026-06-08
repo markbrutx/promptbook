@@ -137,7 +137,7 @@ describe("bundle --exclude-code-prompts", () => {
     const code = await run(["bundle", "--dir", promptsDir, "--exclude-code-prompts"], cap.io);
     expect(code).toBe(0);
     const out = cap.out();
-    expect(out).toContain("codePrompts: new Map([])");
+    expect(out).toContain("codePrompts: new Map()");
     expect(out).not.toContain("digest-table");
   });
 });

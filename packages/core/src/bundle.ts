@@ -95,10 +95,18 @@ function canonicalCodePrompt(codePrompt: CodePrompt): Record<string, unknown> {
   return compact(ordered);
 }
 
-/** Emit `new Map([...])` with one `[key, value]` entry per line (entries pre-sorted). */
+/**
+ * Emit `new Map([...])` with one `[key, value]` entry per line (entries pre-sorted).
+ *
+ * An empty map serializes to `new Map()` (not `new Map([])`): without entries to
+ * infer from, `new Map([])` widens to `Map<unknown, unknown>`, which is not
+ * assignable to `Map<string, T>` in a plain (annotation-free) module. `new Map()`
+ * infers `Map<any, any>`, which stays assignable, so plain bundles type-check
+ * against `PromptBook` even when a map is empty.
+ */
 function serializeMap<T>(entries: [string, T][], canonical: (value: T) => unknown): string {
   if (entries.length === 0) {
-    return "new Map([])";
+    return "new Map()";
   }
   const lines = entries.map(
     ([key, value]) => `    [${JSON.stringify(key)}, ${JSON.stringify(canonical(value))}],`,
