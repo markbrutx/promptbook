@@ -1,7 +1,13 @@
 import type { DefaultRulesOptions, LintReport } from "@markbrutx/promptbook-core";
 import { defaultRules, lint, loadPrompts, resolveBook } from "@markbrutx/promptbook-core";
 import type { ParsedArgs } from "../args.js";
-import { buildContext, lintConfigFrom, loadConfig, requirePromptsDir } from "../config.js";
+import {
+  buildContext,
+  ensureBookNotEmpty,
+  lintConfigFrom,
+  loadConfig,
+  requirePromptsDir,
+} from "../config.js";
 import { colorEnabled, emitWarnings, type IO } from "../io.js";
 import { renderLintReport } from "../render-lint.js";
 
@@ -31,6 +37,9 @@ export async function cmdLint(args: ParsedArgs, io: IO): Promise<number> {
   const rules = defaultRules(ruleOptions);
 
   const book = await loadPrompts(promptsDir, io.fs);
+  if (!(await ensureBookNotEmpty(io, book, promptsDir, args.dir))) {
+    return 1;
+  }
 
   const prompt = args.operands[0];
   let report: LintReport;

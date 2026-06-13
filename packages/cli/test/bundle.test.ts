@@ -134,6 +134,54 @@ describe("bundle command", () => {
   });
 });
 
+describe("bundle -o resolution", () => {
+  it("resolves a relative -o against the book folder, not cwd", async () => {
+    const cap = capture({ cwd: () => join(tmpdir(), "unrelated-cwd") });
+    const code = await run(["bundle", "--dir", promptsDir, "-o", "book.generated.ts"], cap.io);
+    expect(code).toBe(0);
+    expect(Object.keys(cap.files())).toEqual([join(promptsDir, "book.generated.ts")]);
+  });
+
+  it("leaves an absolute -o untouched", async () => {
+    const abs = join(tmpdir(), "pb-abs-out.generated.ts");
+    const cap = capture({ cwd: () => join(tmpdir(), "unrelated-cwd") });
+    const code = await run(["bundle", "--dir", promptsDir, "-o", abs], cap.io);
+    expect(code).toBe(0);
+    expect(Object.keys(cap.files())).toEqual([abs]);
+  });
+});
+
+describe("bundle empty-book guard", () => {
+  let emptyDir: string;
+
+  beforeEach(async () => {
+    emptyDir = await mkdtemp(join(tmpdir(), "pb-bundle-empty-"));
+  });
+
+  afterEach(async () => {
+    await rm(emptyDir, { recursive: true, force: true });
+  });
+
+  it("exits 1 with the resolved path instead of writing a hollow artifact", async () => {
+    const cap = capture();
+    const code = await run(["bundle", "--dir", emptyDir], cap.io);
+    expect(code).toBe(1);
+    expect(cap.err()).toContain("no prompts in");
+    expect(cap.err()).toContain(emptyDir);
+    expect(cap.out()).toBe("");
+    expect(Object.keys(cap.files())).toEqual([]);
+  });
+
+  it("hints at INIT_CWD when pnpm exec snapped cwd to an empty package root", async () => {
+    const cap = capture({ cwd: () => emptyDir, env: { INIT_CWD: promptsDir } });
+    const code = await run(["bundle", "--dir", "."], cap.io);
+    expect(code).toBe(1);
+    expect(cap.err()).toContain("no prompts in");
+    expect(cap.err()).toContain("pnpm exec snaps cwd");
+    expect(cap.err()).toContain(promptsDir);
+  });
+});
+
 describe("bundle --exclude-code-prompts", () => {
   it("keeps code-prompts by default", async () => {
     const cap = capture();

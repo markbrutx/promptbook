@@ -1,5 +1,6 @@
-import { dirname, resolve as resolvePath } from "node:path";
-import type { Context, ContextValue } from "@markbrutx/promptbook-core";
+import { dirname, isAbsolute, resolve as resolvePath } from "node:path";
+import type { Context, ContextValue, PromptBook } from "@markbrutx/promptbook-core";
+import { loadPrompts } from "@markbrutx/promptbook-core";
 import type { IO } from "./io.js";
 
 const NUMERIC = /^-?\d+(?:\.\d+)?$/;
@@ -203,6 +204,67 @@ export async function resolvePromptsDir(io: IO, dirFlag?: string, loaded?: Loade
     return resolvePath(resolved.dir, resolved.data.promptsDir);
   }
   return resolvePath(io.cwd(), "prompts");
+}
+
+/** True when a loaded book carries neither fragments nor compositions. */
+export function isEmptyBook(book: PromptBook): boolean {
+  return book.fragments.size === 0 && book.compositions.size === 0;
+}
+
+/**
+ * When `pnpm exec` snapped cwd to a package root, the *same* relative dir often
+ * still names a real book under `INIT_CWD` (the shell's original directory).
+ * Resolve it there and, if a non-empty book lives at that path, return a hint
+ * pointing the user back — without ever switching resolution silently.
+ */
+async function emptyBookCwdHint(
+  io: IO,
+  dirInput: string | undefined,
+  promptsDir: string,
+): Promise<string | null> {
+  const initCwd = io.env.INIT_CWD;
+  if (initCwd === undefined || initCwd === "" || initCwd === io.cwd()) {
+    return null;
+  }
+  if (dirInput === undefined || isAbsolute(dirInput)) {
+    return null;
+  }
+  const altDir = resolvePath(initCwd, dirInput);
+  if (altDir === promptsDir) {
+    return null;
+  }
+  try {
+    if (!isEmptyBook(await loadPrompts(altDir, io.fs))) {
+      return `a book exists at ${altDir}; pnpm exec snaps cwd to the nearest package root — rerun from there or pass an absolute --dir`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+/**
+ * Guard against a silently-empty book: a folder that exists but holds zero
+ * fragments and zero compositions resolves to an empty book that `bundle` would
+ * write as a hollow artifact and `lint` would pass as "no findings". Treat it as
+ * an error (exit 1) with the absolute path, plus a cwd hint when `INIT_CWD`
+ * reveals the real book sits elsewhere. Returns false when the caller must exit.
+ */
+export async function ensureBookNotEmpty(
+  io: IO,
+  book: PromptBook,
+  promptsDir: string,
+  dirInput: string | undefined,
+): Promise<boolean> {
+  if (!isEmptyBook(book)) {
+    return true;
+  }
+  io.stderr(`error: no prompts in ${promptsDir} (zero fragments, zero compositions)\n`);
+  const hint = await emptyBookCwdHint(io, dirInput, promptsDir);
+  if (hint !== null) {
+    io.stderr(`hint: ${hint}\n`);
+  }
+  return false;
 }
 
 /** Whether a directory can be listed; used to give a clear missing-folder error. */

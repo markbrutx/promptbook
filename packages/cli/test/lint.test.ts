@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { run } from "../src/run.js";
 import { capture, fixtureDir } from "./helpers.js";
 
@@ -105,5 +108,26 @@ describe("lint command", () => {
     const code = await run(["lint", "clean", "--dir", clean, "--max-tokens", "abc"], cap.io);
     expect(code).toBe(1);
     expect(cap.err()).toContain("invalid --max-tokens");
+  });
+});
+
+describe("lint empty-book guard", () => {
+  let emptyDir: string;
+
+  beforeEach(async () => {
+    emptyDir = await mkdtemp(join(tmpdir(), "pb-lint-empty-"));
+  });
+
+  afterEach(async () => {
+    await rm(emptyDir, { recursive: true, force: true });
+  });
+
+  it("exits 1 instead of vacuously reporting no findings on an empty folder", async () => {
+    const cap = capture();
+    const code = await run(["lint", "--dir", emptyDir], cap.io);
+    expect(code).toBe(1);
+    expect(cap.err()).toContain("no prompts in");
+    expect(cap.err()).toContain(emptyDir);
+    expect(cap.out()).not.toContain("no findings");
   });
 });

@@ -2,7 +2,7 @@ import { basename, isAbsolute, join, relative, resolve as resolvePath, sep } fro
 import type { PromptBook } from "@markbrutx/promptbook-core";
 import { loadPrompts, serializeBook, serializeBookJson } from "@markbrutx/promptbook-core";
 import type { ParsedArgs } from "../args.js";
-import { requirePromptsDir } from "../config.js";
+import { ensureBookNotEmpty, requirePromptsDir } from "../config.js";
 import { emitWarnings, type IO } from "../io.js";
 import { loadWorkspace } from "../workspace.js";
 
@@ -72,10 +72,15 @@ function renderOutput(book: PromptBook, args: ParsedArgs): string {
     : serializeBook(book, { typed: !args.plain, importSpecifier: args.importSpecifier });
 }
 
-/** Pick the artifact path: explicit `--out`, else `book.generated.ts` next to the prompts folder. */
-function targetPath(io: IO, args: ParsedArgs, promptsDir: string): string {
+/**
+ * Pick the artifact path: explicit `--out` (absolute as-is, relative resolved
+ * against the **book folder** so `cd <book> && bundle . -o book.generated.ts`
+ * lands in the book even when `pnpm exec` snapped cwd to a package root), else
+ * `book.generated.ts` next to the prompts folder.
+ */
+function targetPath(args: ParsedArgs, promptsDir: string): string {
   if (args.out !== undefined) {
-    return resolvePath(io.cwd(), args.out);
+    return isAbsolute(args.out) ? args.out : resolvePath(promptsDir, args.out);
   }
   return join(promptsDir, BUNDLE_FILE);
 }
@@ -137,8 +142,12 @@ export async function bundleOne(
   promptsDir: string,
   bookName: string,
   inWorkspace: boolean,
+  dirInput?: string,
 ): Promise<number> {
   const loaded = await loadPrompts(promptsDir, io.fs);
+  if (!(await ensureBookNotEmpty(io, loaded, promptsDir, dirInput))) {
+    return 1;
+  }
   // `--exclude-code-prompts` discards them outright; skipping the relativize pass is the whole point.
   const source = args.excludeCodePrompts ? withoutCodePrompts(loaded) : loaded;
   const book = portableBook(source, promptsDir);
@@ -147,7 +156,7 @@ export async function bundleOne(
   const output = renderOutput(book, args);
 
   if (args.check) {
-    const outcome = await checkOne(io, output, targetPath(io, args, promptsDir));
+    const outcome = await checkOne(io, output, targetPath(args, promptsDir));
     emitCheckResult(io, args, bookName, outcome);
     return outcome.status === "up-to-date" ? 0 : 1;
   }
@@ -157,7 +166,7 @@ export async function bundleOne(
     return 0;
   }
 
-  const outPath = targetPath(io, args, promptsDir);
+  const outPath = targetPath(args, promptsDir);
   try {
     await io.writeFile(outPath, output);
   } catch (error) {
@@ -219,5 +228,5 @@ export async function cmdBundle(args: ParsedArgs, io: IO): Promise<number> {
     return bundleAll(io, args, promptsDir);
   }
 
-  return bundleOne(io, args, promptsDir, basename(promptsDir), false);
+  return bundleOne(io, args, promptsDir, basename(promptsDir), false, args.operands[0] ?? args.dir);
 }
