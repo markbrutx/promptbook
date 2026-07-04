@@ -148,3 +148,13 @@ describe("ls --all (workspace)", () => {
     expect(parsed.books).toEqual([]);
   });
 });
+
+describe("ls empty-book guard", () => {
+  it("exits 1 instead of listing a vacuous empty menu", async () => {
+    const cap = capture({ fs: memoryFs({ "/empty/readme.md": "hi" }) });
+    const code = await run(["ls", "--dir", "/empty"], cap.io);
+    expect(code).toBe(1);
+    expect(cap.err()).toContain("no prompts in");
+    expect(cap.out()).toBe("");
+  });
+});

@@ -267,6 +267,54 @@ describe("bundle --check", () => {
     expect(cap.err()).toContain("up to date");
   });
 
+  it("hints at --exclude-code-prompts when the diff is only code-prompt samples", async () => {
+    const outPath = join(tmp, "book.generated.ts");
+    const lean = capture();
+    const leanCode = await run(
+      ["bundle", "--dir", promptsDir, "--exclude-code-prompts", "-o", outPath],
+      lean.io,
+    );
+    expect(leanCode).toBe(0);
+    const files = lean.files();
+    await writeFile(outPath, files[Object.keys(files)[0] as string] as string);
+
+    const cap = capture();
+    const code = await run(["bundle", "--dir", promptsDir, "--check", "-o", outPath], cap.io);
+    expect(code).toBe(1);
+    expect(cap.err()).toMatch(/stale.*first diff at line/);
+    expect(cap.err()).toContain("hint:");
+    expect(cap.err()).toContain("--exclude-code-prompts");
+  });
+
+  it("hints in the reverse direction when checking with --exclude-code-prompts", async () => {
+    const outPath = join(tmp, "book.generated.ts");
+    await freshBundleAt(outPath);
+    const cap = capture();
+    const code = await run(
+      ["bundle", "--dir", promptsDir, "--check", "--exclude-code-prompts", "-o", outPath],
+      cap.io,
+    );
+    expect(code).toBe(1);
+    expect(cap.err()).toContain("re-run without --exclude-code-prompts");
+  });
+
+  it("includes the hint in the --json --check object", async () => {
+    // `--json` also selects the JSON payload serializer, so the artifact under
+    // check must itself be a JSON dump for the comparison to be meaningful.
+    const outPath = join(tmp, "book.generated.json");
+    const lean = capture();
+    await run(["bundle", "--dir", promptsDir, "--exclude-code-prompts", "--json", "-o", outPath], lean.io);
+    const files = lean.files();
+    await writeFile(outPath, files[Object.keys(files)[0] as string] as string);
+
+    const cap = capture();
+    const code = await run(["bundle", "--dir", promptsDir, "--check", "--json", "-o", outPath], cap.io);
+    expect(code).toBe(1);
+    const parsed = JSON.parse(cap.err().trim()) as { status: string; hint?: string };
+    expect(parsed.status).toBe("stale");
+    expect(parsed.hint).toContain("--exclude-code-prompts");
+  });
+
   it("emits a JSON object on stderr with --json --check", async () => {
     const outPath = join(tmp, "book.generated.ts");
     const cap = capture();
@@ -275,6 +323,43 @@ describe("bundle --check", () => {
     const parsed = JSON.parse(cap.err().trim()) as { status: string; diff: { reason: string } };
     expect(parsed.status).toBe("stale");
     expect(parsed.diff.reason).toBe("missing");
+  });
+});
+
+describe("bundle unchanged skip", () => {
+  let tmp: string;
+
+  beforeEach(async () => {
+    tmp = await mkdtemp(join(tmpdir(), "pb-bundle-skip-"));
+  });
+
+  afterEach(async () => {
+    await rm(tmp, { recursive: true, force: true });
+  });
+
+  it("skips rewriting a byte-identical artifact", async () => {
+    const outPath = join(tmp, "book.generated.ts");
+    const first = capture();
+    const firstCode = await run(["bundle", "--dir", promptsDir, "-o", outPath], first.io);
+    expect(firstCode).toBe(0);
+    const files = first.files();
+    await writeFile(outPath, files[Object.keys(files)[0] as string] as string);
+
+    const cap = capture();
+    const code = await run(["bundle", "--dir", promptsDir, "-o", outPath], cap.io);
+    expect(code).toBe(0);
+    expect(cap.err()).toContain(`unchanged ${outPath}`);
+    expect(Object.keys(cap.files())).toEqual([]);
+  });
+
+  it("still rewrites when the artifact drifted", async () => {
+    const outPath = join(tmp, "book.generated.ts");
+    await writeFile(outPath, "// drifted artifact\n");
+    const cap = capture();
+    const code = await run(["bundle", "--dir", promptsDir, "-o", outPath], cap.io);
+    expect(code).toBe(0);
+    expect(cap.err()).toContain(`wrote ${outPath}`);
+    expect(Object.keys(cap.files())).toEqual([outPath]);
   });
 });
 

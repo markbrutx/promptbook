@@ -19,6 +19,7 @@ const DEBOUNCE_MS = 250;
 interface RebuildStats {
   bytes: number;
   ms: number;
+  unchanged: boolean;
 }
 
 /** Local-time clock prefix (`hours:minutes:seconds`); slices off Date#toTimeString's TZ tail. */
@@ -57,13 +58,22 @@ function shouldIgnore(eventPath: string): boolean {
   return false;
 }
 
-/** Wrap `io` so `bundleOne`'s `wrote <path>` chatter is dropped and the artifact size is captured. */
-function captureBytes(io: IO): { sink: IO; bytes: () => number } {
+/**
+ * Wrap `io` so `bundleOne`'s `wrote <path>` / `unchanged <path>` chatter is
+ * dropped while the artifact size and the skip outcome are captured for the
+ * watch stream line.
+ */
+function captureBytes(io: IO): { sink: IO; bytes: () => number; unchanged: () => boolean } {
   let bytes = 0;
+  let skipped = false;
   const sink: IO = {
     ...io,
     stderr(text) {
       if (text.startsWith("wrote ")) {
+        return;
+      }
+      if (text.startsWith("unchanged ")) {
+        skipped = true;
         return;
       }
       io.stderr(text);
@@ -73,7 +83,7 @@ function captureBytes(io: IO): { sink: IO; bytes: () => number } {
       await io.writeFile(path, contents);
     },
   };
-  return { sink, bytes: () => bytes };
+  return { sink, bytes: () => bytes, unchanged: () => skipped };
 }
 
 function emitEvent(
@@ -94,6 +104,10 @@ function emitEvent(
     return;
   }
   if (event === "bundled") {
+    if (payload.unchanged === true) {
+      io.stderr(`${ts} ${payload.book} unchanged (${payload.ms}ms)\n`);
+      return;
+    }
     io.stderr(`${ts} ${payload.book} bundled (${payload.bytes} B, ${payload.ms}ms)\n`);
     return;
   }
@@ -112,7 +126,7 @@ async function rebuild(io: IO, args: ParsedArgs, book: Book): Promise<RebuildSta
     if (code !== 0) {
       return new Error(`bundle exited with code ${code}`);
     }
-    return { bytes: capture.bytes(), ms: Date.now() - start };
+    return { bytes: capture.bytes(), ms: Date.now() - start, unchanged: capture.unchanged() };
   } catch (error) {
     return error as Error;
   }
@@ -123,6 +137,8 @@ async function rebuildAndReport(io: IO, args: ParsedArgs, style: Style, book: Bo
   const result = await rebuild(io, args, book);
   if (result instanceof Error) {
     emitEvent(io, args, style, "error", { book: book.name, message: result.message });
+  } else if (result.unchanged) {
+    emitEvent(io, args, style, "bundled", { book: book.name, ms: result.ms, unchanged: true });
   } else {
     emitEvent(io, args, style, "bundled", { book: book.name, bytes: result.bytes, ms: result.ms });
   }

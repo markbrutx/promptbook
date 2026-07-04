@@ -2,7 +2,7 @@ import { basename, relative } from "node:path";
 import type { PromptBook, RequiredContext } from "@markbrutx/promptbook-core";
 import { loadPrompts, requiredContext } from "@markbrutx/promptbook-core";
 import type { ParsedArgs } from "../args.js";
-import { requirePromptsDir } from "../config.js";
+import { ensureBookNotEmpty, requirePromptsDir } from "../config.js";
 import { emitWarnings, type IO } from "../io.js";
 import { bookDir, loadWorkspace } from "../workspace.js";
 
@@ -119,6 +119,9 @@ export async function cmdLs(args: ParsedArgs, io: IO): Promise<number> {
   }
 
   const book = await loadPrompts(promptsDir, io.fs);
+  if (!(await ensureBookNotEmpty(io, book, promptsDir, args.dir))) {
+    return 1;
+  }
   emitWarnings(io, book.warnings);
 
   const onlyOneSection = args.fragments || args.compositions;

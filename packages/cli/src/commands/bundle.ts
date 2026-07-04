@@ -91,11 +91,8 @@ type CheckOutcome =
   | { status: "stale"; reason: "missing"; path: string }
   | { status: "stale"; reason: "diff"; firstDiffLine: number; path: string };
 
-async function checkOne(io: IO, output: string, path: string): Promise<CheckOutcome> {
-  let existing: string;
-  try {
-    existing = await io.fs.readFile(path);
-  } catch {
+function evaluateCheck(output: string, existing: string | null, path: string): CheckOutcome {
+  if (existing === null) {
     return { status: "stale", reason: "missing", path };
   }
   const line = firstDiffLine(normalizeEol(output), normalizeEol(existing));
@@ -105,7 +102,47 @@ async function checkOne(io: IO, output: string, path: string): Promise<CheckOutc
   return { status: "stale", reason: "diff", firstDiffLine: line, path };
 }
 
-function emitCheckResult(io: IO, args: ParsedArgs, bookName: string, outcome: CheckOutcome): void {
+/** Read a file, or null when it does not exist (any read error counts as absent). */
+async function readIfPresent(io: IO, path: string): Promise<string | null> {
+  try {
+    return await io.fs.readFile(path);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * When a `--check` diff is fully explained by the code-prompts map — the
+ * artifact matches a serialization with the opposite `--exclude-code-prompts`
+ * setting — name the flag instead of leaving the user to eyeball a giant
+ * sample diff (the most common false-drift in real workspaces).
+ */
+function codePromptsHint(
+  args: ParsedArgs,
+  loaded: PromptBook,
+  promptsDir: string,
+  existing: string,
+): string | null {
+  if (loaded.codePrompts.size === 0) {
+    return null;
+  }
+  const altSource = args.excludeCodePrompts ? loaded : withoutCodePrompts(loaded);
+  const altOutput = renderOutput(portableBook(altSource, promptsDir), args);
+  if (normalizeEol(altOutput) !== normalizeEol(existing)) {
+    return null;
+  }
+  return args.excludeCodePrompts
+    ? "artifact includes code-prompt samples; re-run without --exclude-code-prompts"
+    : "diff is only code-prompt samples; artifact was bundled with --exclude-code-prompts — add the flag";
+}
+
+function emitCheckResult(
+  io: IO,
+  args: ParsedArgs,
+  bookName: string,
+  outcome: CheckOutcome,
+  hint: string | null,
+): void {
   if (args.json) {
     const diff =
       outcome.status === "stale"
@@ -113,7 +150,9 @@ function emitCheckResult(io: IO, args: ParsedArgs, bookName: string, outcome: Ch
           ? { reason: "missing", path: outcome.path }
           : { reason: "diff", firstDiffLine: outcome.firstDiffLine }
         : null;
-    io.stderr(`${JSON.stringify({ book: bookName, status: outcome.status, diff })}\n`);
+    io.stderr(
+      `${JSON.stringify({ book: bookName, status: outcome.status, diff, ...(hint === null ? {} : { hint }) })}\n`,
+    );
     return;
   }
   if (outcome.status === "up-to-date") {
@@ -125,6 +164,9 @@ function emitCheckResult(io: IO, args: ParsedArgs, bookName: string, outcome: Ch
     return;
   }
   io.stderr(`${bookName} stale (first diff at line ${outcome.firstDiffLine})\n`);
+  if (hint !== null) {
+    io.stderr(`hint: ${hint}\n`);
+  }
 }
 
 /**
@@ -156,8 +198,14 @@ export async function bundleOne(
   const output = renderOutput(book, args);
 
   if (args.check) {
-    const outcome = await checkOne(io, output, targetPath(args, promptsDir));
-    emitCheckResult(io, args, bookName, outcome);
+    const path = targetPath(args, promptsDir);
+    const existing = await readIfPresent(io, path);
+    const outcome = evaluateCheck(output, existing, path);
+    const hint =
+      outcome.status === "stale" && outcome.reason === "diff" && existing !== null
+        ? codePromptsHint(args, loaded, promptsDir, existing)
+        : null;
+    emitCheckResult(io, args, bookName, outcome, hint);
     return outcome.status === "up-to-date" ? 0 : 1;
   }
 
@@ -167,6 +215,11 @@ export async function bundleOne(
   }
 
   const outPath = targetPath(args, promptsDir);
+  const existing = await readIfPresent(io, outPath);
+  if (existing !== null && normalizeEol(existing) === normalizeEol(output)) {
+    io.stderr(`unchanged ${outPath}\n`);
+    return 0;
+  }
   try {
     await io.writeFile(outPath, output);
   } catch (error) {
@@ -206,9 +259,14 @@ async function bundleAll(io: IO, args: ParsedArgs, root: string): Promise<number
  *   metadata for `ls` / the viewer.
  * - `--check` compares the would-be output against the existing artifact
  *   (`book.generated.ts` next to the prompts folder, or `--out`); exits 1 on
- *   drift or a missing artifact and prints a short hint on stderr.
+ *   drift or a missing artifact and prints a short hint on stderr. When the
+ *   diff is exactly the code-prompts map, the hint names
+ *   `--exclude-code-prompts` instead of pointing at a sample-blob diff.
  * - `--all` walks every book in the workspace and writes each to its own
  *   `book.generated.ts`; incompatible with `-o`.
+ *
+ * Write mode skips byte-identical artifacts (`unchanged <path>` on stderr) so
+ * repeated `bundle --all` runs don't churn mtimes under file watchers.
  *
  * The folder comes from the positional `<dir>`, else `--dir`, else config /
  * `./prompts`. `--all` does not accept a single-book `<dir>` operand differently.
