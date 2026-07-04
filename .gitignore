@@ -37,3 +37,4 @@ wb
 .claude/
 skills-lock.json
 skills/skill-creator
+.wtp.yml
