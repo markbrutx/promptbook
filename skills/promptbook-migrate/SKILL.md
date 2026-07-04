@@ -223,8 +223,9 @@ promptbook lint <comp> --ctx <known-context-values>
 
 Findings that almost always show up on migrations and what they mean:
 
-- `unused-fragment` — you wrote a fragment and forgot to put it in any
-  composition. Either delete it or add it to `base` / a rule.
+- `unused-fragment` — you wrote a fragment and nothing can reach it: no
+  composition/rule mentions it and no reachable fragment references it
+  via `${...}`. Either delete it or add it to `base` / a rule.
 - `dangling-reference` — a `base` or rule names a fragment id that doesn't
   exist. Typo in the id, or the fragment file is missing.
 - `dead-rule` — the rule will never do anything (e.g., `add` of an

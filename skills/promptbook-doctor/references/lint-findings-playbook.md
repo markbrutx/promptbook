@@ -24,12 +24,21 @@ Hard error. Block any release with this.
 
 ## `unused-fragment` (warning, book-scope)
 
-**Meaning**: A fragment file exists but no composition / rule references
-it anywhere (not in `base`, `order`, or any rule action).
+**Meaning**: A fragment file exists but nothing can reach it. Reachable
+means: a composition mentions it (`base`, `order`, or any rule's
+`add`/`after`/`replace`/`forbid`/`order`), or a reachable fragment's
+body references it via `${...}`. Reachability is transitive, so a chain
+of fragments that only reference each other is flagged whole — one
+warning per fragment. A `${...}` key counts only when it names an
+existing fragment id; plain context variables (`${locale}`, `${input}`)
+anchor nothing, and code-prompt samples are frozen text that anchor
+nothing either.
 
 **Common causes**:
 - a fragment was added in anticipation of a use case that never landed;
-- a rule that referenced it was removed but the file wasn't.
+- a rule that referenced it was removed but the file wasn't;
+- a fragment was duplicated during a refactor and the copy — plus any
+  helper fragments only the copy references — was left behind.
 
 **Fix shapes**:
 - **Delete the fragment** if no one needs it. Git remembers.

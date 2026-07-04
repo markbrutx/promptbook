@@ -213,11 +213,14 @@ describe("banned-tokens", () => {
 });
 
 describe("unused-fragment", () => {
-  it("flags a fragment no composition references", () => {
+  it("flags a fragment no composition references, naming id and sourceFile", () => {
     const b = book([fragment("a", "a"), fragment("orphan", "o")], [composition("c", ["a"])]);
     const report = lint({ book: b }, [unusedFragment()]);
     expect(report.findings).toHaveLength(1);
     expect(report.findings[0]?.fragmentId).toBe("orphan");
+    expect(report.findings[0]?.severity).toBe("warning");
+    expect(report.findings[0]?.message).toContain('"orphan"');
+    expect(report.findings[0]?.message).toContain("memory:orphan");
   });
 
   it("treats replace/add references as usage", () => {
@@ -236,6 +239,79 @@ describe("unused-fragment", () => {
     );
     const report = lint({ book: b }, [unusedFragment()]);
     expect(report.findings).toHaveLength(0);
+  });
+
+  it("treats a forbid-only mention as usage", () => {
+    const b = book(
+      [fragment("a", "a"), fragment("b", "b")],
+      [composition("c", ["a"], [{ index: 0, when: {}, action: "forbid", forbid: ["b"] }])],
+    );
+    const report = lint({ book: b }, [unusedFragment()]);
+    expect(report.findings).toHaveLength(0);
+  });
+
+  it("counts a ${ref} from a reachable fragment as usage", () => {
+    const b = book([fragment("a", "see ${shared}"), fragment("shared", "s")], [composition("c", ["a"])]);
+    const report = lint({ book: b }, [unusedFragment()]);
+    expect(report.findings).toHaveLength(0);
+  });
+
+  it("follows ${ref} chains transitively from a reachable fragment", () => {
+    const b = book(
+      [fragment("a", "${b}"), fragment("b", "${c}"), fragment("c", "leaf")],
+      [composition("comp", ["a"])],
+    );
+    const report = lint({ book: b }, [unusedFragment()]);
+    expect(report.findings).toHaveLength(0);
+  });
+
+  it("flags a whole orphan chain that only references itself", () => {
+    const b = book(
+      [fragment("a", "a"), fragment("orphan-a", "${orphan-b}"), fragment("orphan-b", "o")],
+      [composition("c", ["a"])],
+    );
+    const report = lint({ book: b }, [unusedFragment()]);
+    expect(report.findings.map((f) => f.fragmentId)).toEqual(["orphan-a", "orphan-b"]);
+  });
+
+  it("does not let a self-referencing orphan mark itself reachable", () => {
+    const b = book([fragment("a", "a"), fragment("loop", "${loop}")], [composition("c", ["a"])]);
+    const report = lint({ book: b }, [unusedFragment()]);
+    expect(report.findings.map((f) => f.fragmentId)).toEqual(["loop"]);
+  });
+
+  it("ignores ${vars} that are context variables, not fragment ids", () => {
+    const b = book(
+      [fragment("a", "respond in ${locale}"), fragment("spare", "s")],
+      [composition("c", ["a"])],
+    );
+    const report = lint({ book: b }, [unusedFragment()]);
+    expect(report.findings.map((f) => f.fragmentId)).toEqual(["spare"]);
+  });
+
+  it("ignores escaped \\${refs} — they render literally", () => {
+    const b = book(
+      [fragment("a", "literal \\${shared}"), fragment("shared", "s")],
+      [composition("c", ["a"])],
+    );
+    const report = lint({ book: b }, [unusedFragment()]);
+    expect(report.findings.map((f) => f.fragmentId)).toEqual(["shared"]);
+  });
+
+  it("does not treat code-prompt samples as references", () => {
+    const b = book(
+      [fragment("a", "a"), fragment("spare", "s")],
+      [composition("c", ["a"])],
+      [
+        {
+          name: "digest-table",
+          samples: [{ label: "sample", output: "uses ${spare} in frozen text" }],
+          sourceFile: "memory:digest-table",
+        },
+      ],
+    );
+    const report = lint({ book: b }, [unusedFragment()]);
+    expect(report.findings.map((f) => f.fragmentId)).toEqual(["spare"]);
   });
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "@markbrutx/promptbook-core",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Agnostic, deterministic core for composing prompts from reusable fragments via declarative rules.",
   "type": "module",
   "license": "MIT",
