@@ -2,34 +2,54 @@
 
 # promptbook
 
-**Storybook for prompts.** Compose system prompts from reusable fragments by
-declarative rules, *see* every assembled variant, and let agents test and edit
-them in a deterministic loop. Model-, provider-, language- and platform-agnostic.
+Your system prompts are string spaghetti. They started as throwaway text, got
+copy-pasted across flows, grew `if (model === "gpt")` branches, and now live
+scattered through the codebase as template literals. You can't see which pieces
+are shared, what is safe to change, or what the model actually receives — so
+editing is scary and review is impossible.
 
-Prompts start as throwaway text, then get reused across flows, grow conditional
-logic, and return structured data — they become production code but are still
-written like sticky notes. promptbook treats them as code: which fragments are
-shared, what is safe to change, and what the final prompt looks like under a
-given context are all answerable without running a single model call.
+**promptbook turns prompts into a folder of small plain files.** Fragments
+(Markdown) hold the text, rules (YAML) say when each piece applies, and one
+pure `resolve()` assembles the final string. Storybook for prompts: *see* every
+assembled variant. Obsidian for prompts: *see* the whole graph. Deterministic —
+same folder + same context → byte-identical string, zero model calls in the
+engine. Model-, provider-, language- and platform-agnostic.
+
+## Why
+
+- **See the blast radius before prod.** `lint` and the graph show every prompt
+  a fragment edit touches — no model call needed.
+- **Review prompts like code.** A prompt change is a readable diff over small
+  files, not a rewrite of a 200-line template literal.
+- **One prompt compiles per model.** The target model is a context axis: one
+  logical prompt emits prose for one model, JSON for another, XML for a third.
+- **Agents edit safely.** Deterministic resolve + trace + lint is a loop an
+  agent can run without burning tokens; the shipped skills teach it the format.
+
+Not a framework. No orchestration, no chains, no retry loops, no lock-in. The
+engine is a pure function over files; the only stochastic step — the model
+call — stays in your code behind an adapter.
 
 ## Quickstart
 
-Three ways to use promptbook. Pick one.
+Three ways in. Pick one.
 
-**For your agent.** One command installs the skills your agent uses to read,
-edit and migrate prompts — works with Claude Code, Cursor, Codex, Copilot,
-Gemini and 15+ other agents:
+**For your agent** — one command and your agent knows how to read, edit and
+migrate prompt books. Works with Claude Code, Cursor, Codex, Copilot, Gemini
+and 15+ other agents:
 
 ```bash
 npx skills add markbrutx/promptbook
 ```
 
 Ships four skills: `promptbook-install`, `promptbook-migrate`,
-`promptbook-doctor`, `promptbook-annotations`. Browse them on
-[skills.sh](https://skills.sh/markbrutx/promptbook).
+`promptbook-doctor`, `promptbook-annotations`. The migrate skill moves your
+existing scattered prompts into a book without changing what the model
+receives. Browse them on [skills.sh](https://skills.sh/markbrutx/promptbook).
 
-**For the CLI.** Point it at a prompts folder and assemble a prompt — runs
-without installation:
+**For the CLI** — in 60 seconds you'll have a real book open in your browser,
+no install (run from a clone of this repo, or point `--dir` at your own
+prompts folder):
 
 ```bash
 npx @markbrutx/promptbook-cli view --dir examples/support-assistant
@@ -37,7 +57,8 @@ npx @markbrutx/promptbook-cli view --dir examples/support-assistant
 
 Verbs: `ls` · `resolve` · `view` · `lint` · `eval`. Full surface in [CLI](#cli).
 
-**For the library.** Import `resolve()` in any Node or edge runtime:
+**For the library** — five lines to your first assembled prompt, in any Node
+or edge runtime:
 
 ```bash
 npm i @markbrutx/promptbook-core
@@ -154,11 +175,19 @@ single-book `--dir` keeps working unqualified (back-compat).
 
 ## Viewer
 
-`promptbook view` opens a local web app over the folder: a sidebar tree of
-compositions, variants and fragments; the assembled prompt with colored segments
-by source fragment; context pickers that re-assemble live; a used-in graph
-(which prompts share a fragment); variant diff; and inline lint + explain. Select
-text, attach a comment, and it lands in a file queue an agent drains via
+`promptbook view` opens a local web app over the folder, with two views over
+the same book:
+
+- **Canvas** — the assembled prompt with colored segments by source fragment;
+  context pickers that re-assemble live; variant diff; inline lint + explain
+  (which rules fired and why).
+- **Graph** — an Obsidian-style map of the whole book: compositions, fragments
+  and code-prompts as nodes, an edge wherever a base list, rule or `${...}`
+  reference connects them. Shared fragments grow with usage; click any node to
+  jump to it.
+
+A sidebar tree lists compositions, variants and fragments. Select text in the
+canvas, attach a comment, and it lands in a file queue an agent drains via
 `promptbook annotations`.
 
 ## Packages
@@ -167,7 +196,7 @@ text, attach a comment, and it lands in a file queue an agent drains via
 |---------|------------|
 | [`@markbrutx/promptbook-core`](packages/core) | The library. `resolve()`, `lint()`, `eval()`, bundle. Pure functions, zero CLI/UI deps. Ships a zero-dep `./edge` build for edge runtimes. |
 | [`@markbrutx/promptbook-cli`](packages/cli) | `promptbook resolve \| ls \| lint \| eval \| bundle \| watch \| view \| annotations`. The surface for agents and CI. |
-| [`@markbrutx/promptbook-viewer`](packages/viewer) | `promptbook view` → a local web app. Sidebar tree, colored segments, context pickers, used-in graph, diff, annotate-to-agent. |
+| [`@markbrutx/promptbook-viewer`](packages/viewer) | `promptbook view` → a local web app. Canvas + graph views, sidebar tree, context pickers, diff, annotate-to-agent. |
 | [`@markbrutx/promptbook-openrouter`](packages/openrouter) | OpenRouter `ModelAdapter` for `eval`. Network lives here; core stays pure. |
 
 ## Develop

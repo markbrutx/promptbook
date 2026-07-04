@@ -3,7 +3,7 @@ title: Viewer
 description: A local web app that shows your book, resolves variants live, and explains every rule.
 ---
 
-The viewer is a "Storybook for prompts": one page that lists every composition, every fragment, every code-prompt, and lets you re-assemble any variant under any context, with the rule cascade explained next to the resolved text.
+The viewer is a "Storybook for prompts": one page that lists every composition, every fragment, every code-prompt, and lets you re-assemble any variant under any context, with the rule cascade explained next to the resolved text. A **Graph** tab flips the same book into an Obsidian-style map of everything connected to everything.
 
 You can try it right now without installing anything: the [live demo](/demo/sports-broadcast) on this site is the same viewer, running entirely in the browser.
 
@@ -18,8 +18,24 @@ A free port is picked automatically; pass `--port 4000` to pin it. The viewer wa
 ## The panels
 
 - **Sidebar (left).** A book switcher (when the workspace has more than one book), a tree of compositions with their variants, a list of code-prompts (builder-backed prompts that ship with frozen sample output), and a flat list of fragments grouped by `kind`.
-- **Canvas (center).** The resolved prompt with each fragment painted a different colour; hover for the fragment id, click to jump into the fragment view. The footer shows the rough token count.
+- **Canvas (center).** The resolved prompt with each fragment painted a different colour; hover for the fragment id, click to jump into the fragment view. The footer shows the rough token count. Tabs at the top switch between **Canvas** and **Graph**.
 - **Rail (right).** Controls (one input per context axis the composition's rules reference), a Diff dropdown to compare with another variant or fixture, an Annotations panel, and the **Explain** block: every rule, whether it fired and why, plus the final order, replacements, additions, and forbids.
+
+## The graph
+
+The **Graph** tab renders the whole book as one force-directed map, the way
+Obsidian maps a vault:
+
+- **Nodes** are compositions, fragments, and code-prompts. A fragment's node
+  grows with usage, so the shared core of the book is visible at a glance.
+- **Edges** exist wherever a composition's base list, one of its rules
+  (`add` / `replace` / `forbid` / `order`), or a `${...}` placeholder connects
+  two nodes.
+- **Click any node** to jump straight to it — a composition opens on the
+  canvas, a fragment opens its fragment view.
+
+Use it to answer "what breaks if I edit this fragment?" before touching
+anything: every edge out of the node is a prompt that edit reaches.
 
 ## Reading the explain
 

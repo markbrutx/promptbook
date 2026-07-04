@@ -1,37 +1,69 @@
 ---
 title: Introduction
-description: What promptbook is, who it is for, and the problem it solves.
+description: The problem promptbook solves, the fix, and your first 60 seconds.
 ---
 
-promptbook is a tiny, deterministic library for composing prompts. It splits a system prompt into three boring layers:
+## The problem
+
+System prompts start as throwaway text. Then they get reused across flows, grow
+`if (model === "gpt")` branches, and end up scattered through the codebase as
+template literals. At that point you can't answer three basic questions:
+
+- Which pieces are shared between prompts?
+- What is safe to change without breaking another flow?
+- What does the model *actually* receive under a given context?
+
+So editing is scary, and reviewing a prompt PR means eyeballing a string blob.
+
+## The fix
+
+promptbook turns prompts into a folder of small plain files, split into three
+boring layers:
 
 - **WHAT** · reusable Markdown _fragments_ with a YAML frontmatter id.
 - **WHEN** · declarative YAML _rules_ that say which fragments apply for which context.
 - **HOW** · `resolve()` returns a `{ text, trace }` pair you then send to a model.
 
-There are no model calls in the core. There is no orchestration, no DSL beyond the small rule shape, and no string-building in code. The intelligence lives in the agent that drafts your fragments and rules; the runtime stays dumb on purpose.
+Same folder + same context → byte-identical string, every time. The `trace`
+explains why: which rules fired, what got replaced or forbidden, and every
+warning. Nothing throws on bad data; holes surface as warnings instead.
 
-## Who it is for
+## Your first 60 seconds
 
-You need promptbook when one of these starts to bite:
-
-- The same persona / guardrails / format paragraph is copy-pasted across many prompts.
-- You compile the same logical prompt to different output formats for different models (prose for one, JSON for another, XML-tagged for a third).
-- You have a context axis (language, tier, region, compliance regime) and the only place that policy lives is inside string concatenation code, scattered across the codebase.
-- You want a static check that catches "this fragment is dead" or "this rule never fires" before it ships.
-
-## What you get
+No install needed. Try the [in-browser demo](/demo/sports-broadcast) right now —
+it is the real viewer running the real resolver. Or run it locally:
 
 ```bash
-npm install @markbrutx/promptbook-core @markbrutx/promptbook-cli
+npx skills add markbrutx/promptbook                              # teach your agent
+npx @markbrutx/promptbook-cli view --dir path/to/your/prompts    # open the viewer
+npm install @markbrutx/promptbook-core                           # use resolve() in code
 ```
 
-You write fragments and rules as plain files. The CLI lists them, resolves any composition under any context, lints the book for dead rules and dangling fragments, and runs a local viewer that diffs two variants side by side. The viewer is the same one you can [open here](/demo/sports-broadcast), backed by the deterministic resolver running in the browser.
+Any one of the three is a complete entry point. The agent skills include
+`promptbook-migrate`, which moves your existing scattered prompts into a book
+without changing what the model receives.
 
-## The non-goals
+## Not a framework
 
-- Not an LLM orchestration framework. There is no chain-of-thought helper, no retry loop, no streaming client.
-- Not a config-as-code DSL. Rules have four actions (`add`, `replace`, `forbid`, `order`) and a `when` clause. That is the entire surface.
-- Not opinionated about your model. The target model is just another context axis.
+Adopting promptbook does not restructure your app:
 
-The next page walks the WHAT / WHEN / HOW split with code.
+- **No orchestration.** No chain helper, no retry loop, no streaming client.
+  The unit of work is one assembled prompt string; what you do with it is your code.
+- **No model calls in the engine.** `resolve()`, `lint()`, and loading are pure
+  and deterministic. The only stochastic step — calling a model — lives behind
+  an adapter you control, and only `eval` uses it.
+- **No DSL beyond the rule shape.** Rules have four actions (`add`, `replace`,
+  `forbid`, `order`) and a `when` clause. That is the entire surface.
+- **No lock-in.** Your prompts are Markdown and YAML on disk. Delete the tool
+  and the files still read as plain text. The target model is just another
+  context axis, so no provider is privileged.
+
+The runtime stays dumb on purpose; the intelligence lives in the agent that
+drafts your fragments and rules.
+
+## Where to go next
+
+- [Concepts](/docs/concepts) — the WHAT / WHEN / HOW split, with code.
+- [Examples](/docs/examples) — two runnable books, each with a live in-browser demo.
+- [CLI](/docs/cli) — `resolve`, `lint`, `view`, and friends, captured from the built binary.
+- [Viewer](/docs/viewer) — the canvas and graph views, and how to read the explain panel.

@@ -3,6 +3,14 @@ title: Documentation
 description: Compose prompts from reusable fragments via declarative rules.
 ---
 
-promptbook splits prompt assembly into three boring layers: **WHAT** (fragments), **WHEN** (rules), **HOW** (`resolve()`). The runtime stays deterministic; intelligence lives in the agent.
+System prompts scattered through a codebase as template literals are unreviewable:
+you can't see what's shared, what's safe to change, or what the model actually
+receives. promptbook fixes that by splitting prompt assembly into three boring
+layers — **WHAT** (Markdown fragments), **WHEN** (YAML rules), **HOW** (a pure,
+deterministic `resolve()`). No model calls in the engine; intelligence lives in
+the agent.
 
-Start with the [Introduction](/docs/introduction) for the why, then jump to [Concepts](/docs/concepts) for the WHAT / WHEN / HOW split with code. The [Examples](/docs/examples) page links the two demo books, both runnable in the [in-browser viewer](/demo/sports-broadcast).
+Start with the [Introduction](/docs/introduction) for the problem and the fix,
+then jump to [Concepts](/docs/concepts) for the WHAT / WHEN / HOW split with code.
+The [Examples](/docs/examples) page links the two demo books, both runnable in
+the [in-browser viewer](/demo/sports-broadcast).
