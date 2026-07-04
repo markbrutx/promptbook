@@ -2,6 +2,12 @@
 
 # promptbook
 
+<p align="center">
+  <a href="https://github.com/markbrutx/promptbook/actions/workflows/ci.yml"><img src="https://github.com/markbrutx/promptbook/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/@markbrutx/promptbook-cli"><img src="https://img.shields.io/npm/v/%40markbrutx%2Fpromptbook-cli?label=npm" alt="npm"></a>
+  <a href="https://github.com/markbrutx/promptbook/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license: MIT"></a>
+</p>
+
 Your system prompts are string spaghetti. They started as throwaway text, got
 copy-pasted across flows, grew `if (model === "gpt")` branches, and now live
 scattered through the codebase as template literals. You can't see which pieces
