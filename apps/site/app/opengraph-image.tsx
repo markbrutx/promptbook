@@ -42,12 +42,12 @@ export default async function OG() {
           letterSpacing: "-0.012em",
         }}
       >
-        <div>System prompts are part of your code too.</div>
-        <div>I didn’t like that they end up scattered</div>
-        <div>all over the codebase, so I made</div>
+        <div>System prompts end up as string spaghetti</div>
+        <div>scattered through your codebase. promptbook</div>
+        <div>turns them into a folder of files you can see.</div>
         <div style={{ display: "flex" }}>
           <span style={{ color: "#B8FF66" }}>Storybook for prompts</span>
-          <span>. Called it promptbook.</span>
+          <span>, with a graph.</span>
         </div>
       </div>
       <div

@@ -4,7 +4,6 @@ import "@markbrutx/promptbook-viewer/web/styles.css";
 
 import type { PromptBook } from "@markbrutx/promptbook-core/edge";
 import { mountWebApp } from "@markbrutx/promptbook-viewer/web";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createClientApi } from "@/lib/demo/client-api";
 import { findDemoBook } from "@/lib/demo/discover";
@@ -73,25 +72,13 @@ export function DemoIsland({ slug, bookJsonUrl }: DemoIslandProps) {
     );
   }
 
-  // Full bleed viewer: no site header/footer wraps us, so the host owns the
-  // whole viewport. A small floating back link is the only site chrome. We pin
-  // colour/background here so the dark site cascade carries cleanly into the
-  // viewer and the embedded CSS variables (.promptbook-viewer-host in
-  // globals.css) re-skin the viewer to the same dark palette.
+  // The demo page wraps us in a full-height flex column with a one-line
+  // framing strip on top; the island fills the rest. We pin colour/background
+  // here so the dark site cascade carries cleanly into the viewer and the
+  // embedded CSS variables (.promptbook-viewer-host in globals.css) re-skin
+  // the viewer to the same dark palette.
   return (
-    <div className="relative" style={{ height: "100dvh", minHeight: "600px", background: "var(--ink)" }}>
-      <Link
-        href="/"
-        aria-label="Back to promptbook home"
-        className="absolute top-3 right-3 z-20 flex items-center gap-2 border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.28em] backdrop-blur transition"
-        style={{
-          color: "var(--muted)",
-          background: "color-mix(in oklab, var(--ink) 78%, transparent)",
-          borderColor: "var(--border)",
-        }}
-      >
-        <span aria-hidden="true">←</span> back
-      </Link>
+    <div className="relative min-h-0 flex-1" style={{ background: "var(--ink)" }}>
       <div
         ref={containerRef}
         className="promptbook-viewer-host"

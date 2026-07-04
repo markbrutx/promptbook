@@ -18,7 +18,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { loadPrompts, serializeBookJson } from "@markbrutx/promptbook-core";
+import { iterateReferences, loadPrompts, serializeBookJson } from "@markbrutx/promptbook-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const siteRoot = resolve(here, "..");
@@ -60,6 +60,33 @@ function normalizeSourcePaths(book) {
   }
 }
 
+/**
+ * Lightweight node/edge projection of a book for the landing's force graph.
+ * Ids are prefixed (`c:`/`f:`) because a composition and a fragment may share
+ * a name. Edges are composition→fragment references, deduped across roles.
+ */
+function buildGraph(book) {
+  const nodes = [];
+  for (const composition of book.compositions.values()) {
+    nodes.push({ id: `c:${composition.name}`, label: composition.name, kind: "composition" });
+  }
+  for (const fragment of book.fragments.values()) {
+    nodes.push({ id: `f:${fragment.id}`, label: fragment.id, kind: "fragment" });
+  }
+
+  const seen = new Set();
+  const edges = [];
+  for (const ref of iterateReferences(book)) {
+    if (!book.fragments.has(ref.id)) continue;
+    const key = `${ref.composition}\u0000${ref.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    edges.push({ source: `c:${ref.composition}`, target: `f:${ref.id}` });
+  }
+
+  return { nodes, edges };
+}
+
 async function buildOne(entry) {
   const dir = resolve(examplesRoot, entry.slug);
   const book = await loadPrompts(dir);
@@ -73,6 +100,9 @@ async function buildOne(entry) {
   await mkdir(outDir, { recursive: true });
   const jsonPath = join(outDir, "book.json");
   await writeFile(jsonPath, serializeBookJson(book), "utf8");
+
+  const graphPath = join(outDir, "graph.json");
+  await writeFile(graphPath, `${JSON.stringify(buildGraph(book))}\n`, "utf8");
 
   console.log(
     `wrote ${repoRelative(jsonPath)} · ${book.compositions.size} compositions · ${book.fragments.size} fragments`,
