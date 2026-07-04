@@ -34,10 +34,15 @@ No install needed. Try the [in-browser demo](/demo/sports-broadcast) right now â
 it is the real viewer running the real resolver. Or run it locally:
 
 ```bash
-npx skills add markbrutx/promptbook                              # teach your agent
-npx @markbrutx/promptbook-cli view --dir path/to/your/prompts    # open the viewer
-npm install @markbrutx/promptbook-core                           # use resolve() in code
+npx skills add markbrutx/promptbook       # teach your agent
+npx @markbrutx/promptbook-cli init        # scaffold a starter book in ./prompts
+npx @markbrutx/promptbook-cli view        # open it: canvas + graph
+npm install @markbrutx/promptbook-core    # use resolve() in code
 ```
+
+`init` writes `promptbook.json` plus five fragments and one composition whose
+rule swaps the tone fragment on `tone=terse` â€” a working cascade you can
+resolve, lint, and view immediately. It never overwrites existing files.
 
 Any one of the three is a complete entry point. The agent skills include
 `promptbook-migrate`, which moves your existing scattered prompts into a book

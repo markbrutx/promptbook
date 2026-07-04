@@ -15,6 +15,9 @@ assembled variant. Obsidian for prompts: *see* the whole graph. Deterministic �
 same folder + same context → byte-identical string, zero model calls in the
 engine. Model-, provider-, language- and platform-agnostic.
 
+<p align="center"><img src="assets/screenshot-graph.png" alt="The graph view: every composition, fragment and code-prompt of a book as a glowing force-directed map" width="920" /></p>
+<p align="center"><sub>The graph view over <code>examples/sports-broadcast</code> — every node is a file, every edge a reference.</sub></p>
+
 ## Why
 
 - **See the blast radius before prod.** `lint` and the graph show every prompt
@@ -47,15 +50,21 @@ Ships four skills: `promptbook-install`, `promptbook-migrate`,
 existing scattered prompts into a book without changing what the model
 receives. Browse them on [skills.sh](https://skills.sh/markbrutx/promptbook).
 
-**For the CLI** — in 60 seconds you'll have a real book open in your browser,
-no install (run from a clone of this repo, or point `--dir` at your own
-prompts folder):
+**For the CLI** — in 60 seconds you'll have a real book open in your browser.
+In your own project, scaffold one and view it:
+
+```bash
+npx @markbrutx/promptbook-cli init   # promptbook.json + a starter book
+npx @markbrutx/promptbook-cli view   # browse it: canvas + graph
+```
+
+Or browse a bigger example from a clone of this repo:
 
 ```bash
 npx @markbrutx/promptbook-cli view --dir examples/support-assistant
 ```
 
-Verbs: `ls` · `resolve` · `view` · `lint` · `eval`. Full surface in [CLI](#cli).
+Verbs: `init` · `ls` · `resolve` · `view` · `lint` · `eval`. Full surface in [CLI](#cli).
 
 **For the library** — five lines to your first assembled prompt, in any Node
 or edge runtime:
@@ -181,14 +190,22 @@ the same book:
 - **Canvas** — the assembled prompt with colored segments by source fragment;
   context pickers that re-assemble live; variant diff; inline lint + explain
   (which rules fired and why).
+
+<p align="center"><img src="assets/screenshot-canvas.png" alt="The canvas: the assembled prompt in colored segments, with fired rules and the final order explained in the rail" width="920" /></p>
+<p align="center"><sub>Flip <code>sport=basketball</code> · <code>tier=premium</code> and watch the prompt re-assemble — the rail shows exactly which rules fired.</sub></p>
+
 - **Graph** — an Obsidian-style map of the whole book: compositions, fragments
   and code-prompts as nodes, an edge wherever a base list, rule or `${...}`
-  reference connects them. Shared fragments grow with usage; click any node to
-  jump to it.
+  reference connects them. Shared fragments grow with usage. Click a node to
+  isolate its neighborhood (a local graph, camera and all); double-click to
+  open it in the canvas.
 
-A sidebar tree lists compositions, variants and fragments. Select text in the
-canvas, attach a comment, and it lands in a file queue an agent drains via
-`promptbook annotations`.
+<p align="center"><img src="assets/screenshot-graph-focus.png" alt="Local graph mode: one fragment focused, showing only the prompts that depend on it" width="920" /></p>
+<p align="center"><sub>Local mode answers the question that matters: <em>which prompts break if I edit this fragment?</em></sub></p>
+
+A sidebar tree lists compositions, variants and fragments — press `/` to
+filter it. Select text in the canvas, attach a comment, and it lands in a file
+queue an agent drains via `promptbook annotations`.
 
 ## Packages
 

@@ -654,7 +654,7 @@ export default function HomePage() {
               <Step
                 n="01"
                 title="Put prompts in a folder"
-                body="Fragments are Markdown, rules are YAML — data, not code. They diff, review and version like everything else in your repo."
+                body="Fragments are Markdown, rules are YAML — data, not code. They diff, review and version like everything else in your repo. One command scaffolds it: npx @markbrutx/promptbook-cli init."
               >
                 <div className="landing-card flex flex-1 flex-col overflow-hidden">
                   <div className="border-b border-[var(--border)] px-5 py-4">
