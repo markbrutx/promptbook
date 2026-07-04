@@ -36,6 +36,19 @@ export interface GraphData {
   neighbors: number[][];
 }
 
+/**
+ * Node indices visible in the graph's local mode: the focused node plus its
+ * 1-hop neighborhood. An out-of-range focus yields an empty set, which the
+ * renderer treats as "show everything".
+ */
+export function neighborhoodOf(neighbors: number[][], focus: number): Set<number> {
+  const adjacent = neighbors[focus];
+  if (adjacent === undefined) {
+    return new Set();
+  }
+  return new Set([focus, ...adjacent]);
+}
+
 /** Mirrors core's `${path}` placeholder syntax (interpolate / extractVariables). */
 const REF_RE = /(\\?)\$\{([^}]+)\}/g;
 

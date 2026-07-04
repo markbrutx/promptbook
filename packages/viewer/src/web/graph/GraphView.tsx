@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { BookResponse } from "../types.js";
-import { buildGraph, type GraphNode } from "./model.js";
+import { buildGraph, type GraphNode, neighborhoodOf } from "./model.js";
 import {
   approach,
   clamp01,
@@ -128,8 +128,11 @@ function rememberPositions(keys: string[], positions: { x: number; y: number }[]
 /**
  * Force-directed map of the loaded book (compositions ▸ fragments ▸ `${…}`
  * refs) on a single canvas. Hover highlights a node's neighborhood, drag
- * repositions, scroll zooms, background-drag pans, click opens the node in
- * the regular canvas view.
+ * repositions, scroll zooms, background-drag pans. Click focuses a node into
+ * local mode (only its 1-hop neighborhood stays visible, everything else
+ * eases out and the camera glides to frame it); clicking the focused node
+ * again — or double-clicking any node — opens it in the regular canvas view.
+ * Escape, a background click, or the breadcrumb chip restores the full map.
  *
  * Rendering treats nodes as light sources: pre-rendered radial sprites
  * composited with `lighter` (real additive bloom, no per-frame shadowBlur),
@@ -149,8 +152,14 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
   const [legendPalette, setLegendPalette] = useState<Palette>(FALLBACK_PALETTE);
   const handlersRef = useRef({ onSelectComposition, onSelectCode, onSelectFragment });
   handlersRef.current = { onSelectComposition, onSelectCode, onSelectFragment };
+  // Local mode's React face: the breadcrumb chip + hint copy. The interaction
+  // logic lives inside the canvas effect; the chip reaches it via this ref.
+  const [focused, setFocused] = useState<GraphNode | null>(null);
+  const clearFocusRef = useRef<() => void>(() => {});
 
   useEffect(() => {
+    // A new graph (book switch, hot reload) always restores the full map.
+    setFocused(null);
     const container = containerRef.current;
     const canvas = canvasRef.current;
     if (container === null || canvas === null || graph.nodes.length === 0) {
@@ -263,7 +272,16 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
     let dirty = true;
     let raf: number | null = null;
 
-    let panning: { sx: number; sy: number; tx: number; ty: number } | null = null;
+    // Local mode: focus one node and its 1-hop neighborhood; everything else
+    // eases toward invisible (per-node visMix). Physics stays global — hidden
+    // nodes keep their settled positions, so restoring never re-blooms.
+    let focus: number | null = null;
+    let focusSet: Set<number> | null = null;
+    const visMix: number[] = graph.nodes.map(() => 1);
+    let glide = false;
+    let lastClick: { index: number; at: number } | null = null;
+
+    let panning: { sx: number; sy: number; tx: number; ty: number; moved: boolean } | null = null;
     let dragging: { index: number; ox: number; oy: number; moved: boolean; sx: number; sy: number } | null =
       null;
     let pointer: { sx: number; sy: number } | null = null;
@@ -324,6 +342,10 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         if (node === undefined || particle === undefined) {
           continue;
         }
+        // Hidden nodes are not interactive while local mode is on.
+        if (focusSet !== null && !focusSet.has(i)) {
+          continue;
+        }
         const hitRadius = Math.max(node.radius, 8 / transform.k) + 2 / transform.k;
         const dx = w.x - particle.x;
         const dy = w.y - particle.y;
@@ -334,7 +356,7 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
       return null;
     };
 
-    const fitView = (lerpAmount: number): void => {
+    const fitView = (lerpAmount: number, subset?: Set<number>): void => {
       if (!sized) {
         return;
       }
@@ -342,15 +364,27 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
       let minY = Number.POSITIVE_INFINITY;
       let maxX = Number.NEGATIVE_INFINITY;
       let maxY = Number.NEGATIVE_INFINITY;
-      for (const particle of sim.nodes) {
+      for (let i = 0; i < sim.nodes.length; i += 1) {
+        if (subset !== undefined && !subset.has(i)) {
+          continue;
+        }
+        const particle = sim.nodes[i];
+        if (particle === undefined) {
+          continue;
+        }
         minX = Math.min(minX, particle.x);
         minY = Math.min(minY, particle.y);
         maxX = Math.max(maxX, particle.x);
         maxY = Math.max(maxY, particle.y);
       }
+      if (!Number.isFinite(minX)) {
+        return;
+      }
       const spanX = Math.max(maxX - minX, 60);
       const spanY = Math.max(maxY - minY, 60);
-      const k = clamp(Math.min(width / (spanX + 160), height / (spanY + 160)), 0.2, 1.4);
+      // A focused neighborhood may zoom in past the whole-graph cap.
+      const kMax = subset !== undefined ? 1.6 : 1.4;
+      const k = clamp(Math.min(width / (spanX + 160), height / (spanY + 160)), 0.2, kMax);
       const cx = (minX + maxX) / 2;
       const cy = (minY + maxY) / 2;
       transform.k += (k - transform.k) * lerpAmount;
@@ -358,17 +392,53 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
       transform.y += (height / 2 - cy * transform.k - transform.y) * lerpAmount;
     };
 
+    /** Enter/leave local mode; visibility eases in ~250ms (snaps under reduced motion). */
+    const setFocus = (next: number | null): void => {
+      if (next === focus) {
+        return;
+      }
+      focus = next;
+      focusSet = next === null ? null : neighborhoodOf(graph.neighbors, next);
+      setFocused(next === null ? null : (graph.nodes[next] ?? null));
+      glide = true;
+      if (reducedMotion) {
+        for (let i = 0; i < visMix.length; i += 1) {
+          visMix[i] = focusSet === null || focusSet.has(i) ? 1 : 0;
+        }
+        fitView(1, focusSet ?? undefined);
+        glide = false;
+      }
+      invalidate();
+    };
+    clearFocusRef.current = () => setFocus(null);
+
+    const openNode = (index: number): void => {
+      const node = graph.nodes[index];
+      if (node === undefined) {
+        return;
+      }
+      if (node.kind === "composition") {
+        handlersRef.current.onSelectComposition(node.name);
+      } else if (node.kind === "code") {
+        handlersRef.current.onSelectCode(node.name);
+      } else {
+        handlersRef.current.onSelectFragment(node.name);
+      }
+    };
+
     /** Advance eased render state; returns the hover neighborhood (or null). */
     const updateMotion = (now: number): Set<number> | null => {
       const dt = Math.min(64, now - lastFrame);
       lastFrame = now;
-      const focus = hover !== null ? new Set([hover, ...(graph.neighbors[hover] ?? [])]) : null;
+      const hoverSet = hover !== null ? new Set([hover, ...(graph.neighbors[hover] ?? [])]) : null;
       const hoverTarget = hover !== null ? 1 : 0;
       hoverMix = reducedMotion ? hoverTarget : approach(hoverMix, hoverTarget, dt, 80);
       const dtS = dt / 1000;
       for (let i = 0; i < graph.nodes.length; i += 1) {
-        const litTarget = focus?.has(i) ? 1 : 0;
+        const litTarget = hoverSet?.has(i) ? 1 : 0;
         litNode[i] = reducedMotion ? litTarget : approach(litNode[i] ?? 0, litTarget, dt, 60);
+        const visTarget = focusSet === null || focusSet.has(i) ? 1 : 0;
+        visMix[i] = reducedMotion ? visTarget : approach(visMix[i] ?? 1, visTarget, dt, 90);
         const scaleTarget = hover === i ? 1.32 : 1;
         if (reducedMotion) {
           hoverScale[i] = scaleTarget;
@@ -392,7 +462,7 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
       }
       const driftTarget = !reducedMotion && sim.settled() && dragging === null ? 1 : 0;
       driftMix = approach(driftMix, driftTarget, dt, 700);
-      return focus;
+      return hoverSet;
     };
 
     const draw = (now: number): void => {
@@ -452,6 +522,10 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
           continue;
         }
         const lit = litEdge[j] ?? 0;
+        const vis = Math.min(visMix[edge.source] ?? 1, visMix[edge.target] ?? 1);
+        if (vis <= 0.01) {
+          continue;
+        }
         const dim = 1 - hoverMix * (1 - lit) * 0.92;
         const ax = a.x + driftX(artA.phase);
         const ay = a.y + driftY(artA.phase);
@@ -464,7 +538,7 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         const gradient = ctx.createLinearGradient(ax, ay, bx, by);
         gradient.addColorStop(0, rgba(colorA, alphaA));
         gradient.addColorStop(1, rgba(colorB, alphaB));
-        ctx.globalAlpha = dim * enter;
+        ctx.globalAlpha = dim * enter * vis;
         ctx.strokeStyle = gradient;
         ctx.lineWidth = (1 + lit) / k;
         ctx.setLineDash(edge.kind === "ref" ? [4 / k, 4 / k] : []);
@@ -493,7 +567,11 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         if (a === undefined || b === undefined || artA === undefined || artB === undefined) {
           continue;
         }
-        ctx.globalAlpha = 0.28 * lit * hoverMix;
+        const vis = Math.min(visMix[edge.source] ?? 1, visMix[edge.target] ?? 1);
+        if (vis <= 0.01) {
+          continue;
+        }
+        ctx.globalAlpha = 0.28 * lit * hoverMix * vis;
         ctx.strokeStyle = rgba(accentRgb, 1);
         ctx.lineWidth = 3.6 / k;
         ctx.setLineDash(edge.kind === "ref" ? [4 / k, 4 / k] : []);
@@ -516,6 +594,10 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         if (enter <= 0) {
           continue;
         }
+        const vis = visMix[i] ?? 1;
+        if (vis <= 0.01) {
+          continue;
+        }
         const lit = litNode[i] ?? 0;
         // Dimmed halos must die almost completely or they read as moss.
         const focusAlpha = 1 - hoverMix * (1 - lit) * 0.97;
@@ -525,7 +607,7 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         // Dimmed light also contracts — embers, not clouds.
         const contraction = 1 - hoverMix * (1 - lit) * 0.25;
         const radius = nodeArt.haloR * breathR * scale * contraction * (0.5 + 0.5 * easeOutCubic(enter));
-        let alpha = nodeArt.haloAlpha * breathA * focusAlpha * enter * enter * zoomDamp;
+        let alpha = nodeArt.haloAlpha * breathA * focusAlpha * enter * enter * zoomDamp * vis;
         if (hover === i) {
           alpha = Math.min(1, alpha * 1.3);
         }
@@ -550,12 +632,16 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         if (enter <= 0) {
           continue;
         }
+        const vis = visMix[i] ?? 1;
+        if (vis <= 0.01) {
+          continue;
+        }
         const lit = litNode[i] ?? 0;
         const radius = nodeArt.coreR * (hoverScale[i] ?? 1) * (entrance ? easeOutBack(enter) : 1);
         if (radius <= 0) {
           continue;
         }
-        ctx.globalAlpha = (1 - hoverMix * (1 - lit) * 0.85) * Math.min(1, enter * 3);
+        ctx.globalAlpha = (1 - hoverMix * (1 - lit) * 0.85) * Math.min(1, enter * 3) * vis;
         ctx.fillStyle = nodeArt.coreFill;
         ctx.beginPath();
         if (node.kind === "code") {
@@ -596,10 +682,14 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         if (enter <= 0) {
           continue;
         }
+        const vis = visMix[i] ?? 1;
+        if (vis <= 0.01) {
+          continue;
+        }
         const lit = litNode[i] ?? 0;
         const radius = nodeArt.coreR * (hoverScale[i] ?? 1) * 0.85;
         ctx.globalAlpha =
-          nodeArt.specAlpha * (0.25 + 0.75 * zoomDamp) * (1 - hoverMix * (1 - lit) * 0.95) * enter;
+          nodeArt.specAlpha * (0.25 + 0.75 * zoomDamp) * (1 - hoverMix * (1 - lit) * 0.95) * enter * vis;
         const x = particle.x + driftX(nodeArt.phase);
         const y = particle.y + driftY(nodeArt.phase);
         ctx.drawImage(nodeArt.spec, x - radius, y - radius, radius * 2, radius * 2);
@@ -626,7 +716,10 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         }
         const base = node.kind === "fragment" ? clamp((k - 1.05) * 2, 0, 1) : clamp((k - 0.55) * 2.2, 0, 1);
         const lit = Math.max(litNode[i] ?? 0, hover === i ? 1 : 0);
-        return lerp(base, lit, hoverMix) * entranceOf(i, now);
+        // Local mode: the visible neighborhood always earns labels (reading it
+        // is the point); hidden nodes take their labels with them.
+        const focusBoost = focusSet?.has(i) ? 0.9 : 0;
+        return Math.max(lerp(base, lit, hoverMix), focusBoost) * entranceOf(i, now) * (visMix[i] ?? 1);
       };
       const labelOrder = graph.nodes
         .map((_, i) => i)
@@ -680,6 +773,19 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
       const moved = reducedMotion ? false : sim.tick();
       if (moved && autoFit) {
         fitView(0.12);
+      }
+      if (glide && !reducedMotion) {
+        // Camera glides toward the (restored or focused) frame until it
+        // arrives or the user grabs the wheel/pointer.
+        const { k, x, y } = transform;
+        fitView(0.1, focusSet ?? undefined);
+        if (
+          Math.abs(transform.k - k) < 0.0005 &&
+          Math.abs(transform.x - x) < 0.25 &&
+          Math.abs(transform.y - y) < 0.25
+        ) {
+          glide = false;
+        }
       }
       updateMotion(now);
       if (!reducedMotion) {
@@ -763,6 +869,7 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
     const onWheel = (event: WheelEvent): void => {
       event.preventDefault();
       autoFit = false;
+      glide = false;
       const rect = canvas.getBoundingClientRect();
       const sx = event.clientX - rect.left;
       const sy = event.clientY - rect.top;
@@ -778,6 +885,7 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         return;
       }
       autoFit = false;
+      glide = false;
       canvas.setPointerCapture(event.pointerId);
       const rect = canvas.getBoundingClientRect();
       const sx = event.clientX - rect.left;
@@ -792,7 +900,7 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         dragging = { index, ox: w.x - particle.x, oy: w.y - particle.y, moved: false, sx, sy };
         canvas.style.cursor = "grabbing";
       } else {
-        panning = { sx, sy, tx: transform.x, ty: transform.y };
+        panning = { sx, sy, tx: transform.x, ty: transform.y, moved: false };
         canvas.style.cursor = "grabbing";
       }
     };
@@ -820,6 +928,9 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         return;
       }
       if (panning !== null) {
+        if (Math.abs(sx - panning.sx) + Math.abs(sy - panning.sy) > 4) {
+          panning.moved = true;
+        }
         transform.x = panning.tx + (sx - panning.sx);
         transform.y = panning.ty + (sy - panning.sy);
         invalidate();
@@ -856,20 +967,27 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         endDrag(index);
         invalidate();
         if (!moved) {
-          const node = graph.nodes[index];
-          if (node !== undefined) {
-            if (node.kind === "composition") {
-              handlersRef.current.onSelectComposition(node.name);
-            } else if (node.kind === "code") {
-              handlersRef.current.onSelectCode(node.name);
-            } else {
-              handlersRef.current.onSelectFragment(node.name);
-            }
+          // First click focuses the node's neighborhood; a second click on the
+          // focused node (or a fast double-click anywhere) opens it in Canvas,
+          // so navigation stays one gesture away.
+          const at = performance.now();
+          const doubleClick = lastClick !== null && lastClick.index === index && at - lastClick.at < 350;
+          lastClick = { index, at };
+          if (doubleClick || focus === index) {
+            openNode(index);
+          } else {
+            setFocus(index);
           }
         }
         return;
       }
-      panning = null;
+      if (panning !== null) {
+        const backgroundClick = !panning.moved;
+        panning = null;
+        if (backgroundClick && focus !== null) {
+          setFocus(null);
+        }
+      }
     };
 
     const onPointerLeave = (): void => {
@@ -880,6 +998,21 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
         invalidate();
       }
     };
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== "Escape" || focus === null) {
+        return;
+      }
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+      ) {
+        return;
+      }
+      setFocus(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
 
     canvas.addEventListener("wheel", onWheel, { passive: false });
     canvas.addEventListener("pointerdown", onPointerDown);
@@ -892,6 +1025,7 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
     return () => {
       resizeObserver.disconnect();
       dprQuery?.removeEventListener("change", onDprChange);
+      window.removeEventListener("keydown", onKeyDown);
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointermove", onPointerMove);
@@ -944,7 +1078,25 @@ export function GraphView({ book, onSelectComposition, onSelectCode, onSelectFra
             </li>
             {hasRefs ? <li className="graph-legend-ref">⌁ ${"{…}"} refs</li> : null}
           </ul>
-          <p className="graph-hint">drag nodes · scroll to zoom · click to open</p>
+          {focused !== null ? (
+            <button
+              type="button"
+              className="graph-focus-chip"
+              title="Show the whole graph (Esc)"
+              onClick={() => clearFocusRef.current()}
+            >
+              <span className="graph-focus-prefix">focused:</span>
+              <span className="graph-focus-name">{focused.label}</span>
+              <span className="graph-focus-x" aria-hidden>
+                ×
+              </span>
+            </button>
+          ) : null}
+          <p className="graph-hint">
+            {focused === null
+              ? "drag nodes · scroll to zoom · click to focus · double-click to open"
+              : "Esc or background click to show all · click the focused node to open"}
+          </p>
         </>
       )}
     </main>

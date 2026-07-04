@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGraph } from "../src/web/graph/model.js";
+import { buildGraph, neighborhoodOf } from "../src/web/graph/model.js";
 import type { BookResponse } from "../src/web/types.js";
 
 /** Synthetic book: one composition, one code-prompt, four fragments. */
@@ -122,5 +122,35 @@ describe("buildGraph", () => {
         expect(graph.neighbors[neighbor]).toContain(index);
       }
     });
+  });
+});
+
+describe("neighborhoodOf", () => {
+  const graph = buildGraph(makeBook());
+  const byKey = new Map(graph.nodes.map((node, index) => [node.key, index]));
+  const index = (key: string): number => {
+    const i = byKey.get(key);
+    if (i === undefined) {
+      throw new Error(`missing node ${key}`);
+    }
+    return i;
+  };
+
+  it("returns the focus plus its 1-hop neighborhood", () => {
+    const intro = index("f:intro");
+    const visible = neighborhoodOf(graph.neighbors, intro);
+    expect([...visible].sort()).toEqual(
+      [intro, index("c:assistant"), index("c:digest/table"), index("f:intro-terse")].sort(),
+    );
+  });
+
+  it("keeps an isolated node visible alone", () => {
+    const unused = index("f:unused");
+    expect(neighborhoodOf(graph.neighbors, unused)).toEqual(new Set([unused]));
+  });
+
+  it("yields an empty set for an out-of-range focus", () => {
+    expect(neighborhoodOf(graph.neighbors, -1).size).toBe(0);
+    expect(neighborhoodOf(graph.neighbors, graph.nodes.length).size).toBe(0);
   });
 });

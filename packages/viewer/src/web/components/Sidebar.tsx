@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { fragmentAccent } from "../colors.js";
+import { applySidebarFilter } from "../filter.js";
 import type { Selection } from "../selection.js";
 import type { CompositionTreeNode, FragmentGroup, GroupNode } from "../tree.js";
 import type { WorkspaceBook } from "../types.js";
@@ -161,6 +162,70 @@ function GroupItem({
   );
 }
 
+/** The pinned quick-filter row: input + `/` hint, or count + clear when active. */
+function FilterBox({
+  query,
+  onQuery,
+  matched,
+  total,
+  inputRef,
+}: {
+  query: string;
+  onQuery: (next: string) => void;
+  matched: number;
+  total: number;
+  inputRef: RefObject<HTMLInputElement | null>;
+}) {
+  const active = query.trim() !== "";
+  return (
+    <div className="sidebar-filter">
+      <input
+        ref={inputRef}
+        type="text"
+        className="sidebar-filter-input"
+        placeholder="Filter"
+        aria-label="Filter compositions and fragments"
+        title="Filter compositions and fragments — press / to focus, Esc to clear"
+        value={query}
+        onChange={(event) => onQuery(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            // Keep the Escape local: it clears the filter, never the graph focus.
+            event.stopPropagation();
+            onQuery("");
+            event.currentTarget.blur();
+          }
+        }}
+      />
+      <span className="sidebar-filter-affix">
+        {active ? (
+          <>
+            <span className="sidebar-filter-count">
+              {matched} of {total}
+            </span>
+            <button
+              type="button"
+              className="sidebar-filter-clear"
+              aria-label="Clear filter"
+              title="Clear filter (Esc)"
+              onClick={() => {
+                onQuery("");
+                inputRef.current?.focus();
+              }}
+            >
+              ×
+            </button>
+          </>
+        ) : (
+          <kbd className="sidebar-filter-key" aria-hidden>
+            /
+          </kbd>
+        )}
+      </span>
+    </div>
+  );
+}
+
 export function Sidebar({
   books,
   activeBook,
@@ -173,17 +238,57 @@ export function Sidebar({
   onSelectFragment,
 }: SidebarProps) {
   const handlers: NodeHandlers = { onSelectVariant, onSelectCode };
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // `/` focuses the filter from anywhere, unless the user is already typing.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const filtered = useMemo(
+    () => applySidebarFilter(tree, fragmentGroups, query),
+    [tree, fragmentGroups, query],
+  );
+  const active = query.trim() !== "";
+
   return (
     <nav className="sidebar">
       <BookSwitcher books={books} activeBook={activeBook} onSelectBook={onSelectBook} />
+      <FilterBox
+        query={query}
+        onQuery={setQuery}
+        matched={filtered.matched}
+        total={filtered.total}
+        inputRef={inputRef}
+      />
       <section>
         <h2 className="sidebar-title" title="Prompts this book assembles from fragments via rules">
           Compositions
         </h2>
-        {tree.length === 0 ? (
-          <p className="muted">(none)</p>
+        {filtered.tree.length === 0 ? (
+          <p className="muted">{active ? "No matches." : "(none)"}</p>
         ) : (
-          <CompositionNodes nodes={tree} selection={selection} handlers={handlers} />
+          <CompositionNodes nodes={filtered.tree} selection={selection} handlers={handlers} />
         )}
       </section>
 
@@ -191,7 +296,10 @@ export function Sidebar({
         <h2 className="sidebar-title" title="Reusable blocks of prompt text, shared across compositions">
           Fragments
         </h2>
-        {fragmentGroups.map((group) => (
+        {active && filtered.fragmentGroups.length === 0 && fragmentGroups.length > 0 ? (
+          <p className="muted">No matches.</p>
+        ) : null}
+        {filtered.fragmentGroups.map((group) => (
           <details key={group.kind} className="tree-group" open>
             <summary className="tree-folder">{group.kind}</summary>
             <ul className="tree">
