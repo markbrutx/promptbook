@@ -7,6 +7,9 @@ import { Controls } from "./components/Controls.js";
 import { Diff } from "./components/Diff.js";
 import { FragmentView } from "./components/FragmentView.js";
 import { Sidebar } from "./components/Sidebar.js";
+import { Welcome } from "./components/Welcome.js";
+import { axisExamples } from "./examples.js";
+import { GraphView } from "./graph/GraphView.js";
 import type { Selection } from "./selection.js";
 import { buildCompositionTree, buildFragmentGroups, DEFAULT_VARIANT } from "./tree.js";
 import type {
@@ -70,6 +73,7 @@ export function App({ api, subscribeReload }: AppProps) {
   const [compareVariant, setCompareVariant] = useState<string>("");
   const [compareResolved, setCompareResolved] = useState<ResolveResponse | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [view, setView] = useState<"canvas" | "graph">("canvas");
   const requestId = useRef(0);
   // Mirror activeBook into a ref so the (book-independent) SSE subscription can
   // read the current book without re-subscribing on every switch.
@@ -223,17 +227,29 @@ export function App({ api, subscribeReload }: AppProps) {
       setSelection({ kind: "variant", composition, variant });
       setContext(variantContext(summary, variant));
       setCompareVariant("");
+      setView("canvas");
     },
     [compositions],
   );
 
   const selectCode = useCallback((name: string, sample: string) => {
     setSelection({ kind: "code", name, sample });
+    setView("canvas");
   }, []);
 
   const selectFragment = useCallback((id: string) => {
     setSelection({ kind: "fragment", id });
+    setView("canvas");
   }, []);
+
+  // Graph → canvas navigation: a code-prompt opens on its first sample.
+  const openCodePrompt = useCallback(
+    (name: string) => {
+      const codePrompt = book?.codePrompts.find((c) => c.name === name);
+      selectCode(name, codePrompt?.samples[0]?.label ?? "");
+    },
+    [book, selectCode],
+  );
 
   const addAnnotation = useCallback(
     async (fragmentId: string, anchorText: string, comment: string) => {
@@ -273,6 +289,7 @@ export function App({ api, subscribeReload }: AppProps) {
 
   const codePrompts = book?.codePrompts ?? [];
   const tree = useMemo(() => buildCompositionTree(compositions, codePrompts), [compositions, codePrompts]);
+  const axisExampleMap = useMemo(() => axisExamples(selectedComposition), [selectedComposition]);
   const fragmentGroups = useMemo(() => buildFragmentGroups(book?.fragments ?? []), [book]);
   const selectedFragment =
     selection?.kind === "fragment" ? book?.fragments.find((f) => f.id === selection.id) : undefined;
@@ -293,13 +310,47 @@ export function App({ api, subscribeReload }: AppProps) {
         onSelectFragment={selectFragment}
       />
 
+      <div className="viewbar" role="tablist" aria-label="View">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "canvas"}
+          className={`view-tab${view === "canvas" ? " active" : ""}`}
+          title="The assembled prompt, one colored block per source fragment"
+          onClick={() => setView("canvas")}
+        >
+          Canvas
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "graph"}
+          className={`view-tab${view === "graph" ? " active" : ""}`}
+          title="The whole book as a connected map: prompts, fragments, references"
+          onClick={() => setView("graph")}
+        >
+          Graph
+        </button>
+      </div>
+
+      <Welcome />
+
       {error !== null ? (
         <main className="canvas">
           <p className="warn">{error}</p>
         </main>
       ) : null}
 
-      {error === null && selection?.kind === "variant" && resolved !== null ? (
+      {error === null && view === "graph" && book !== null ? (
+        <GraphView
+          book={book}
+          onSelectComposition={(name) => selectVariant(name, DEFAULT_VARIANT.name)}
+          onSelectCode={openCodePrompt}
+          onSelectFragment={selectFragment}
+        />
+      ) : null}
+
+      {error === null && view === "canvas" && selection?.kind === "variant" && resolved !== null ? (
         <Canvas
           title={selection.composition}
           subtitle={selection.variant}
@@ -310,7 +361,10 @@ export function App({ api, subscribeReload }: AppProps) {
         />
       ) : null}
 
-      {error === null && selection?.kind === "code" && selectedCodePrompt !== undefined ? (
+      {error === null &&
+      view === "canvas" &&
+      selection?.kind === "code" &&
+      selectedCodePrompt !== undefined ? (
         <CodePromptView
           codePrompt={selectedCodePrompt}
           sample={selection.sample}
@@ -318,7 +372,7 @@ export function App({ api, subscribeReload }: AppProps) {
         />
       ) : null}
 
-      {error === null && selectedFragment !== undefined ? (
+      {error === null && view === "canvas" && selectedFragment !== undefined ? (
         <FragmentView
           fragment={selectedFragment}
           usedIn={usedIn}
@@ -326,15 +380,26 @@ export function App({ api, subscribeReload }: AppProps) {
         />
       ) : null}
 
-      {selection?.kind === "variant" && resolved !== null ? (
+      {view === "canvas" && selection?.kind === "variant" && resolved !== null ? (
         <aside className="rail">
           <section>
-            <h3>Controls</h3>
-            <Controls keys={controlKeys(selectedComposition)} context={context} onChange={setContext} />
+            <h3 title="Context axes read by this prompt's rules — set a value and the prompt re-assembles">
+              Controls
+            </h3>
+            <Controls
+              keys={controlKeys(selectedComposition)}
+              context={context}
+              examples={axisExampleMap}
+              onChange={setContext}
+            />
           </section>
           <section>
-            <h3>Diff</h3>
-            <select value={compareVariant} onChange={(event) => setCompareVariant(event.target.value)}>
+            <h3 title="Line diff between two assembled outputs">Diff</h3>
+            <select
+              value={compareVariant}
+              title="Pick a saved variant to compare against what is on screen"
+              onChange={(event) => setCompareVariant(event.target.value)}
+            >
               <option value="">Compare with…</option>
               <option value={DEFAULT_VARIANT.name}>{DEFAULT_VARIANT.name}</option>
               {(selectedComposition?.variants ?? []).map((variant) => (
@@ -353,7 +418,9 @@ export function App({ api, subscribeReload }: AppProps) {
             ) : null}
           </section>
           <section>
-            <h3>Annotations</h3>
+            <h3 title="Feedback pinned to exact prompt text — select text in the prompt to add one">
+              Annotations
+            </h3>
             {variantAnnotations.length === 0 ? (
               <p className="muted">None yet. Select text in the prompt to leave a comment for the agent.</p>
             ) : (
@@ -364,7 +431,12 @@ export function App({ api, subscribeReload }: AppProps) {
                     <p className="annot-comment">{a.comment}</p>
                     <div className="annot-meta">
                       <code className="muted">{a.anchor.fragmentId}</code>
-                      <button type="button" className="link" onClick={() => void resolveAnnotation(a.id)}>
+                      <button
+                        type="button"
+                        className="link"
+                        title="Mark as handled and remove"
+                        onClick={() => void resolveAnnotation(a.id)}
+                      >
                         Resolve
                       </button>
                     </div>

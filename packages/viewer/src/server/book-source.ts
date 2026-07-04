@@ -74,7 +74,7 @@ export interface WorkspaceSource {
   books(): Promise<Book[]>;
   /** Load a book by name, or the first book when the name is missing/unknown. */
   resolve(name?: string): Promise<ResolvedBook | undefined>;
-  /** Drop one book's cache (or none) and re-scan the book set. */
+  /** Drop one book's cache (or every book's when unnamed) and re-scan the book set. */
   invalidate(name?: string): void;
 }
 
@@ -115,6 +115,12 @@ export function createWorkspaceSource(root: string, fs?: FsAdapter): WorkspaceSo
       bookList = undefined;
       if (name !== undefined) {
         sources.get(name)?.invalidate();
+        return;
+      }
+      // An unnamed change (root-is-book edits, several books at once) must
+      // drop every cache, or the next resolve serves stale folders.
+      for (const source of sources.values()) {
+        source.invalidate();
       }
     },
   };

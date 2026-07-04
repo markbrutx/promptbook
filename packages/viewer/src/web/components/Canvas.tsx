@@ -109,11 +109,15 @@ export function Canvas({ title, subtitle, segments, tokens, annotations, onAnnot
           <h1 className="canvas-title">{title}</h1>
           {subtitle ? <p className="muted">{subtitle}</p> : null}
         </div>
-        {tokens !== undefined ? <span className="badge">~{tokens} tokens</span> : null}
+        {tokens !== undefined ? (
+          <span className="badge" title="Approximate token count of the assembled prompt">
+            ~{tokens} tokens
+          </span>
+        ) : null}
       </header>
 
       {ids.length > 0 ? (
-        <ul className="legend">
+        <ul className="legend" title="One color per source fragment — the blocks below reuse these colors">
           {ids.map((id) => (
             <li key={id}>
               <span className="swatch" style={{ background: fragmentAccent(id) }} />

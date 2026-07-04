@@ -92,7 +92,19 @@ export async function startViewer(options: ViewerOptions): Promise<Viewer> {
   const boundPort = typeof address === "object" && address !== null ? address.port : port;
   const url = `http://localhost:${boundPort}`;
 
-  const watcher = watchFolder(promptsDir, (book) => handler.notifyReload(book));
+  // A change path's first segment only names a book in a multi-book
+  // workspace; in a root-is-book workspace it is `fragments`/`rules`/… — treat
+  // anything that is not a known book name as "unknown" so the client
+  // refetches its active book and every cache is dropped.
+  const watcher = watchFolder(promptsDir, (segment) => {
+    void workspace
+      .books()
+      .then((books) => {
+        const known = segment !== undefined && books.some((b) => b.name === segment);
+        handler.notifyReload(known ? segment : undefined);
+      })
+      .catch(() => handler.notifyReload(undefined));
+  });
 
   if (open) {
     openBrowser(url);

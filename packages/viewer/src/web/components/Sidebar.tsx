@@ -177,7 +177,9 @@ export function Sidebar({
     <nav className="sidebar">
       <BookSwitcher books={books} activeBook={activeBook} onSelectBook={onSelectBook} />
       <section>
-        <h2 className="sidebar-title">Compositions</h2>
+        <h2 className="sidebar-title" title="Prompts this book assembles from fragments via rules">
+          Compositions
+        </h2>
         {tree.length === 0 ? (
           <p className="muted">(none)</p>
         ) : (
@@ -186,7 +188,9 @@ export function Sidebar({
       </section>
 
       <section>
-        <h2 className="sidebar-title">Fragments</h2>
+        <h2 className="sidebar-title" title="Reusable blocks of prompt text, shared across compositions">
+          Fragments
+        </h2>
         {fragmentGroups.map((group) => (
           <details key={group.kind} className="tree-group" open>
             <summary className="tree-folder">{group.kind}</summary>
