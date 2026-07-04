@@ -12,9 +12,17 @@ description: >-
 # Install promptbook in a project
 
 You are setting up `@markbrutx/promptbook` in a user's project so they can
-assemble prompts deterministically from reusable fragments. There is no
-`promptbook init` CLI — install is a small set of file edits + one or two
-npm installs. Do them, then verify with `promptbook ls` and `promptbook lint`.
+assemble prompts deterministically from reusable fragments.
+
+**Fast path:** `npx @markbrutx/promptbook-cli init` (CLI ≥ 0.5.1) scaffolds
+`promptbook.json` plus a starter book (five fragments, one composition with a
+tone-swap rule) and never overwrites existing files. Run it, replace the
+starter fragments with the user's real content, then verify with
+`promptbook ls` and `promptbook lint`.
+
+When `init` is not available (older CLI) or the user wants a custom layout,
+install is a small set of file edits + one or two npm installs — the rest of
+this skill describes them. Either way, finish with the verification loop.
 
 ## Mental model — what you are creating
 
@@ -193,9 +201,9 @@ around it.
 
 ## What not to do
 
-- **Do not invent CLI commands.** There is no `promptbook init`, no
-  `promptbook new fragment`, no `promptbook scaffold`. The install is file
-  edits plus `npm i`.
+- **Do not invent CLI commands.** `promptbook init` exists (CLI ≥ 0.5.1);
+  there is no `promptbook new fragment` and no `promptbook scaffold`. Beyond
+  `init`, the install is file edits plus `npm i`.
 - **Do not put runtime model-call code in the prompts folder.** The folder is
   data: fragments + rules + fixtures. The model call happens in user code via
   `resolve()` from `@markbrutx/promptbook-core`.

@@ -4,6 +4,7 @@ import { parseCliArgs } from "./args.js";
 import { cmdAnnotations } from "./commands/annotations.js";
 import { cmdBundle } from "./commands/bundle.js";
 import { cmdEval } from "./commands/eval.js";
+import { cmdInit } from "./commands/init.js";
 import { cmdLint } from "./commands/lint.js";
 import { cmdLs } from "./commands/ls.js";
 import { cmdResolve } from "./commands/resolve.js";
@@ -17,6 +18,7 @@ Usage:
   promptbook <command> [options]
 
 Commands:
+  init [<dir>]            Scaffold a starter book: promptbook.json + fragments + one rule
   resolve [<book>/]<prompt>  Assemble a prompt and print it to stdout (--all: every book)
   lint [<prompt>]         Run static checks; with no prompt, book rules only
   eval [<name|glob>]      Run fixtures through a model adapter, report pass-rate
@@ -94,6 +96,8 @@ export async function run(argv: string[], io: IO = defaultIO()): Promise<number>
   }
 
   switch (args.command) {
+    case "init":
+      return cmdInit(args, io);
     case "resolve":
       return cmdResolve(args, io);
     case "lint":
